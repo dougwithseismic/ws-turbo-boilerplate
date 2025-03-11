@@ -1,19 +1,20 @@
 import { renamePackages, clearApps, setupEnvFiles, setupHusky } from "./steps";
-import { validateScope, type RenameConfig } from "./types";
+import { setupRailway, syncRailwayEnv } from "./steps/setup-railway";
+import {
+  validateScope,
+  type RenameConfig,
+  type SetupStep,
+  type SetupOptions,
+} from "./types";
 import { Command } from "commander";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import * as fs from "fs";
+import * as path from "path";
 
 const program = new Command();
-
-type SetupStep = {
-  name: string;
-  value: string;
-  checked: boolean;
-  description: string;
-};
 
 const setupSteps: SetupStep[] = [
   {
@@ -48,6 +49,12 @@ const setupSteps: SetupStep[] = [
     checked: true,
     description:
       "Configures the original template repository as an upstream remote for future updates",
+  },
+  {
+    name: "Setup Railway",
+    value: "setup-railway",
+    checked: false,
+    description: "Initialize or link Railway project and set up databases",
   },
 ];
 
@@ -135,11 +142,40 @@ const executeSteps = async (
       case "setup-template":
         await setupTemplateUpstream();
         break;
+      case "setup-railway":
+        await setupRailway();
+        break;
     }
   }
 };
 
-export const setupProject = async (): Promise<void> => {
+export const setupProject = async (
+  options: SetupOptions = {},
+): Promise<void> => {
+  if (options.only === "railway-env") {
+    try {
+      await syncRailwayEnv();
+      console.log(
+        chalk.green("\n✨ Railway environment sync completed successfully!\n"),
+      );
+    } catch (error) {
+      console.error(chalk.red("\n❌ Railway environment sync failed:"), error);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (options.only === "railway") {
+    try {
+      await setupRailway();
+      console.log(chalk.green("\n✨ Railway setup completed successfully!\n"));
+    } catch (error) {
+      console.error(chalk.red("\n❌ Railway setup failed:"), error);
+      process.exit(1);
+    }
+    return;
+  }
+
   showBanner();
 
   try {
@@ -178,7 +214,11 @@ program
   .name("setup-project")
   .description("Interactive setup for the SDK project")
   .version("0.0.0")
-  .action(setupProject);
+  .option(
+    "--only <step>",
+    "Run only a specific setup step (railway or railway-env)",
+  )
+  .action((options) => setupProject(options));
 
 // Allow running directly from CLI
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

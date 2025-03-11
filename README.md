@@ -1,84 +1,132 @@
-# Turborepo starter
+# Project Setup Scripts
 
-This Turborepo starter is maintained by the Turborepo core team.
+This repository contains a set of automated setup scripts to help you quickly configure and customize your project. The scripts are built with TypeScript and provide an interactive CLI experience.
 
-## Using this example
+## Features
 
-Run the following command:
+### 1. Interactive Setup Process
 
-```sh
-npx create-turbo@latest
+Run the complete setup with:
+
+```bash
+pnpm setup:project
 ```
 
-## What's inside?
+This will guide you through:
 
-This Turborepo includes the following packages/apps:
+- Package scope configuration (e.g., @myorg)
+- Selection of setup steps to execute
+- Visual feedback for each step
 
-### Apps and Packages
+### 2. Available Setup Steps
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+#### Clear Apps Directory
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- Removes the `apps/docs` directory if it exists
+- Useful for cleaning up template documentation
 
-### Utilities
+#### Package Renaming
 
-This Turborepo has some additional tools already setup for you:
+- Updates all package names from template scope (@repo) to your custom scope
+- Modifies imports across the entire codebase
+- Handles various file types: `.ts`, `.tsx`, `.js`, `.jsx`, `.json`, etc.
+- Updates Supabase configuration files
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+#### Environment Setup
 
-### Build
+- Automatically copies `.env.example` files to `.env`
+- Searches in root, apps/_, and packages/_ directories
+- Preserves existing .env files
 
-To build all apps and packages, run the following command:
+#### Husky & Lint-Staged Configuration
 
-```
-cd my-turborepo
-pnpm build
-```
+- Installs and configures Husky for git hooks
+- Sets up lint-staged for code quality checks
+- Configures pre-commit hooks for:
+  - ESLint fixes
+  - Prettier formatting
+  - Supports various file types (JS/TS, JSON, MD, YAML)
 
-### Develop
+#### Template Updates
 
-To develop all apps and packages, run the following command:
+- Configures the original template as an upstream remote
+- Enables future template updates via:
 
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
+```bash
+pnpm template:update
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+#### Railway Integration
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+- Interactive Railway.app setup
+- Options for new or existing projects
+- Database provisioning
+- Environment variable synchronization
 
+### 3. Railway-Specific Commands
+
+#### Full Railway Setup
+
+```bash
+pnpm setup:railway
 ```
-npx turbo link
+
+- Initialize or link Railway project
+- Optional GitHub repository connection
+- Database provisioning
+- Environment variable sync
+
+#### Environment Sync Only
+
+```bash
+pnpm railway:sync-env
 ```
 
-## Useful Links
+- Sync Railway environment variables
+- Choose between development/production environments
+- Updates all relevant .env files
 
-Learn more about the power of Turborepo:
+## Scripts Overview
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+| Script                  | Description                        |
+| ----------------------- | ---------------------------------- |
+| `pnpm setup:project`    | Run the complete interactive setup |
+| `pnpm setup:railway`    | Railway-specific setup only        |
+| `pnpm railway:sync-env` | Sync Railway environment variables |
+| `pnpm template:update`  | Update from upstream template      |
+
+## Requirements
+
+- Node.js >= 18
+- pnpm 9.0.0 or higher
+- Git
+
+## Environment Variables
+
+The setup process handles various types of environment variables, including:
+
+- Railway-specific variables
+- Database credentials (Postgres, Redis, MongoDB, MySQL)
+- Project-specific configurations
+
+## Error Handling
+
+All setup steps include:
+
+- Comprehensive error reporting
+- Graceful fallbacks
+- Clear user feedback
+- Non-destructive operations (won't overwrite existing configs)
+
+## Contributing
+
+When contributing to the setup scripts:
+
+1. Maintain the modular structure in `packages/scripts/src`
+2. Follow the established error handling patterns
+3. Add clear console feedback for user actions
+4. Test both Windows and Unix compatibility
+
+## License
+
+See the LICENSE file in the root directory.

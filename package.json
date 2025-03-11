@@ -8,6 +8,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "setup:project": "tsx packages/scripts/src/setup.ts",
+    "setup:railway": "tsx packages/scripts/src/setup.ts --only railway",
+    "railway:sync-env": "tsx packages/scripts/src/setup.ts --only railway-env",
     "prepare": "husky",
     "template:fetch": "git fetch template",
     "template:merge": "git merge template/main --allow-unrelated-histories",
