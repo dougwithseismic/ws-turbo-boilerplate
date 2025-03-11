@@ -12,17 +12,27 @@ const updateFileContent = async (
     const content = await readFile(filePath, "utf-8");
     const oldContent = content;
 
-    // Replace in JSON files
-    const newContent = content
-      .replace(new RegExp(`"${oldScope}/([^"]+)"`, "g"), `"${newScope}/$1"`)
-      .replace(
-        new RegExp(`from "${oldScope}/([^"]+)"`, "g"),
-        `from "${newScope}/$1"`,
-      )
-      .replace(
-        new RegExp(`extends "${oldScope}/([^"]+)"`, "g"),
-        `extends "${newScope}/$1"`,
+    let newContent = content;
+
+    // Handle Supabase config.toml project_id
+    if (filePath.endsWith("config.toml")) {
+      newContent = content.replace(
+        /project_id = "supabase"/g,
+        `project_id = "${newScope.replace("@", "")}"`,
       );
+    } else {
+      // Replace in JSON and code files
+      newContent = content
+        .replace(new RegExp(`"${oldScope}/([^"]+)"`, "g"), `"${newScope}/$1"`)
+        .replace(
+          new RegExp(`from "${oldScope}/([^"]+)"`, "g"),
+          `from "${newScope}/$1"`,
+        )
+        .replace(
+          new RegExp(`extends "${oldScope}/([^"]+)"`, "g"),
+          `extends "${newScope}/$1"`,
+        );
+    }
 
     if (oldContent !== newContent) {
       await writeFile(filePath, newContent, "utf-8");
@@ -57,6 +67,7 @@ export const renamePackages = async (config: RenameConfig): Promise<void> => {
     "**/*.mjs",
     "**/*.cjs",
     "**/tsconfig.json",
+    "**/config.toml",
   ]);
 
   let updatedCount = 0;
