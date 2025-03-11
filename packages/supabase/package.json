@@ -3,10 +3,12 @@
     "@supabase/supabase-js": "^2.49.1"
   },
   "devDependencies": {
+    "@types/node": "^20.11.24",
     "eslint": "^8.57.0",
     "rimraf": "^5.0.5",
     "supabase": "^2.15.8",
     "tsup": "^8.0.2",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   },
   "files": [
@@ -27,6 +29,7 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "dev": "tsup --watch",
+    "generate:modules": "tsx scripts/generate-modules.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
