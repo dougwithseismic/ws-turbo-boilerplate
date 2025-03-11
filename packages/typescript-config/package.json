@@ -1,9 +1,14 @@
 {
-  "name": "@repo/typescript-config",
-  "version": "0.0.0",
-  "private": true,
+  "exports": {
+    "./base": "./base.json",
+    "./next": "./next.json",
+    "./react-library": "./react-library.json"
+  },
   "license": "MIT",
+  "name": "@repo/typescript-config",
+  "private": true,
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "version": "0.0.0"
 }
