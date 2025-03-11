@@ -4,6 +4,7 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const program = new Command();
 
@@ -40,6 +41,13 @@ const setupSteps: SetupStep[] = [
     checked: true,
     description:
       "Configures git hooks with Husky and lint-staged for code quality checks",
+  },
+  {
+    name: "Setup template upstream",
+    value: "setup-template",
+    checked: true,
+    description:
+      "Configures the original template repository as an upstream remote for future updates",
   },
 ];
 
@@ -80,6 +88,32 @@ const promptForScope = async (): Promise<RenameConfig> => {
   };
 };
 
+const setupTemplateUpstream = async () => {
+  try {
+    console.log(
+      chalk.blue("\n🔗 Setting up template repository as upstream remote..."),
+    );
+
+    // Add the template repository as a remote
+    execSync(
+      "git remote add template https://github.com/dougwithseismic/ws-turbo-boilerplate.git",
+    );
+
+    console.log(chalk.green("\n✅ Template upstream configured successfully!"));
+    console.log(chalk.blue("\nTo get template updates in the future, run:"));
+    console.log(chalk.yellow("git fetch template"));
+    console.log(
+      chalk.yellow("git merge template/main --allow-unrelated-histories"),
+    );
+  } catch (error) {
+    if (error.message.includes("remote template already exists")) {
+      console.log(chalk.yellow("\n⚠️ Template remote already configured"));
+    } else {
+      throw error;
+    }
+  }
+};
+
 const executeSteps = async (
   selectedSteps: string[],
   config: RenameConfig,
@@ -97,6 +131,9 @@ const executeSteps = async (
         break;
       case "setup-husky":
         await setupHusky();
+        break;
+      case "setup-template":
+        await setupTemplateUpstream();
         break;
     }
   }

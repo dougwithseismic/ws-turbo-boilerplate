@@ -8,7 +8,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "setup:project": "tsx packages/scripts/src/setup.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "template:fetch": "git fetch template",
+    "template:merge": "git merge template/main --allow-unrelated-histories",
+    "template:update": "pnpm template:fetch && pnpm template:merge"
   },
   "devDependencies": {
     "husky": "^9.1.7",
