@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "ext-sniffle-sdk-gen",
   "private": true,
   "scripts": {
     "build": "turbo run build",
