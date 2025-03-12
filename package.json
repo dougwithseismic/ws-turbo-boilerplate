@@ -41,5 +41,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/dougwithseismic/ws-turbo-boilerplate"
+  },
+  "dependencies": {
+    "@types/node": "^22.13.10"
   }
 }
