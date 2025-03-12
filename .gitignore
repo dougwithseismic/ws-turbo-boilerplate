@@ -28,6 +28,8 @@ out/
 build
 dist
 
+token.txt
+
 
 # Debug
 npm-debug.log*
