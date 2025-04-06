@@ -1,17 +1,18 @@
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1",
+    "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.71.10",
     "chalk": "^5.4.1"
   },
   "devDependencies": {
-    "@types/node": "^20.11.24",
-    "eslint": "^8.57.0",
-    "rimraf": "^5.0.5",
-    "supabase": "^2.15.8",
-    "tsup": "^8.0.2",
-    "tsx": "^4.7.1",
-    "typescript": "^5.3.3"
+    "@types/node": "^22.14.0",
+    "@zer0/typescript-config": "workspace:*",
+    "eslint": "^9.24.0",
+    "rimraf": "^6.0.1",
+    "supabase": "^2.20.5",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
   },
   "files": [
     "dist/**"
