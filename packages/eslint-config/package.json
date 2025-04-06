@@ -17,7 +17,7 @@
     "./next-js": "./next.js",
     "./react-internal": "./react-internal.js"
   },
-  "name": "@repo/eslint-config",
+  "name": "@zer0/eslint-config",
   "private": true,
   "type": "module",
   "version": "0.0.0"

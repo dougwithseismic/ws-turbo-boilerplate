@@ -1,5 +1,9 @@
-import { renamePackages, clearApps, setupEnvFiles, setupHusky } from "./steps";
-import { setupRailway, syncRailwayEnv } from "./steps/setup-railway";
+import {
+  renamePackages,
+  decryptEnvFiles,
+  setupRailway,
+  syncRailwayEnv,
+} from "./steps";
 import {
   validateScope,
   type RenameConfig,
@@ -14,15 +18,63 @@ import { execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
+// Define __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// --- Helper Functions from provided script --- START
+
+/**
+ * Executes a shell command and streams the output.
+ * @param {string} command - The command to execute.
+ * @param {string} description - A description of the command being run.
+ * @param {string} [cwd] - Optional current working directory for the command.
+ */
+function runCommand(command: string, description: string, cwd?: string): void {
+  console.log(chalk.blue(`\nRunning: ${description}...`));
+  console.log(chalk.cyan(`> ${command}`));
+  try {
+    execSync(command, { stdio: "inherit", cwd: cwd || process.cwd() });
+    console.log(chalk.green(`\n✓ ${description} completed successfully.`));
+  } catch (error) {
+    console.error(chalk.red(`\n✗ Error running ${description}:`));
+    console.error(
+      chalk.red("Command failed. Please check the output above for details."),
+    );
+    process.exit(1); // Exit if command fails
+  }
+}
+
+/**
+ * Checks if Docker is running.
+ * Exits the process with an error message if Docker is not responsive.
+ */
+function checkDockerStatus(): void {
+  console.log(chalk.blue("Checking if Docker is running..."));
+  try {
+    execSync("docker ps -q", { stdio: "ignore" });
+    console.log(chalk.green("✓ Docker appears to be running."));
+  } catch (error) {
+    console.error(
+      chalk.red(
+        "Error: Docker does not seem to be running or is unresponsive.",
+      ),
+    );
+    console.log(
+      chalk.yellow(
+        "Please start Docker Desktop (or your Docker daemon) and ensure it's running correctly.",
+      ),
+    );
+    console.log(chalk.yellow("Then, run this script again."));
+    process.exit(1); // Exit if Docker check fails
+  }
+}
+
+// --- Helper Functions from provided script --- END
+
 const program = new Command();
 
 const setupSteps: SetupStep[] = [
-  {
-    name: "Clear apps/docs directory",
-    value: "clear-apps",
-    checked: true,
-    description: "Removes the apps/docs directory if it exists",
-  },
   {
     name: "Rename packages",
     value: "rename-packages",
@@ -30,31 +82,24 @@ const setupSteps: SetupStep[] = [
     description: "Updates all package names and imports to use your scope",
   },
   {
-    name: "Setup environment files",
-    value: "setup-env",
+    name: "Decrypt environment files",
+    value: "decrypt-env",
     checked: true,
     description:
-      "Copies .env.example files to .env in root, apps/*, and packages/*",
-  },
-  {
-    name: "Setup Husky and lint-staged",
-    value: "setup-husky",
-    checked: true,
-    description:
-      "Configures git hooks with Husky and lint-staged for code quality checks",
-  },
-  {
-    name: "Setup template upstream",
-    value: "setup-template",
-    checked: true,
-    description:
-      "Configures the original template repository as an upstream remote for future updates",
+      "Decrypts .env.encrypted files to .env in apps/* if they don't exist",
   },
   {
     name: "Setup Railway",
     value: "setup-railway",
     checked: false,
     description: "Initialize or link Railway project and set up databases",
+  },
+  {
+    name: "Setup Supabase (Local)",
+    value: "setup-supabase-local",
+    checked: false,
+    description:
+      "Builds Supabase package, generates keys, and checks status (requires Docker)",
   },
 ];
 
@@ -95,55 +140,106 @@ const promptForScope = async (): Promise<RenameConfig> => {
   };
 };
 
-const setupTemplateUpstream = async () => {
-  try {
-    console.log(
-      chalk.blue("\n🔗 Setting up template repository as upstream remote..."),
-    );
+const setupSupabaseLocal = async () => {
+  console.log(chalk.blue("\n🐳 Setting up Supabase for local development..."));
 
-    // Add the template repository as a remote
-    execSync(
-      "git remote add template https://github.com/dougwithseismic/ws-turbo-boilerplate.git",
-    );
+  checkDockerStatus(); // Check if Docker is running first
 
-    console.log(chalk.green("\n✅ Template upstream configured successfully!"));
-    console.log(chalk.blue("\nTo get template updates in the future, run:"));
-    console.log(chalk.yellow("git fetch template"));
-    console.log(
-      chalk.yellow("git merge template/main --allow-unrelated-histories"),
+  const supabasePackageDir = path.resolve(__dirname, "../../supabase"); // Adjust path if needed
+
+  if (!fs.existsSync(supabasePackageDir)) {
+    console.error(
+      chalk.red(
+        `\n✗ Supabase package directory not found at: ${supabasePackageDir}`,
+      ),
     );
-  } catch (error) {
-    if (error.message.includes("remote template already exists")) {
-      console.log(chalk.yellow("\n⚠️ Template remote already configured"));
-    } else {
-      throw error;
-    }
+    console.log(
+      chalk.yellow(
+        "  Skipping Supabase local setup. Ensure the path is correct.",
+      ),
+    );
+    return; // Don't exit, just skip this step
   }
+
+  // Check if supabase package exists in packages folder
+  const packagesDir = path.resolve(__dirname, "../../");
+  const supabasePackagePath = path.join(packagesDir, "supabase");
+
+  if (!fs.existsSync(supabasePackagePath)) {
+    console.warn(
+      chalk.yellow(
+        `\n⚠️ Supabase package not found at ${supabasePackagePath}. Skipping Supabase local setup.`,
+      ),
+    );
+    return;
+  }
+
+  runCommand(
+    "pnpm build", // Assuming build script exists in supabase package.json
+    "Building Supabase package",
+    supabasePackageDir,
+  );
+
+  runCommand(
+    "pnpm run supabase:start", // Start Supabase service
+    "Starting Supabase service",
+    supabasePackageDir,
+  );
+
+  runCommand(
+    "pnpm run supabase:gen:keys", // Assuming this script exists
+    "Generating Supabase keys",
+    supabasePackageDir,
+  );
+
+  runCommand(
+    "npx supabase status", // Run supabase CLI via npx
+    "Checking Supabase status",
+    supabasePackageDir,
+  );
+
+  console.log(
+    chalk.green("\n✅ Supabase local setup steps completed successfully!"),
+  );
 };
 
 const executeSteps = async (
   selectedSteps: string[],
-  config: RenameConfig,
+  config: RenameConfig | null,
+  secret?: string,
 ): Promise<void> => {
   for (const step of selectedSteps) {
     switch (step) {
-      case "clear-apps":
-        await clearApps();
-        break;
       case "rename-packages":
-        await renamePackages(config);
+        if (config) {
+          await renamePackages(config);
+          // Run pnpm install after renaming packages
+          console.log(
+            chalk.blue("🔄 Running pnpm install after renaming packages..."),
+          );
+          try {
+            execSync("pnpm install", { stdio: "inherit" });
+            console.log(chalk.green("✓ pnpm install completed successfully."));
+          } catch (error: any) {
+            console.error(chalk.red("❌ pnpm install failed:"), error?.message);
+            // Optionally re-throw or handle the error appropriately
+            throw new Error("pnpm install failed after renaming packages.");
+          }
+        }
         break;
-      case "setup-env":
-        await setupEnvFiles();
-        break;
-      case "setup-husky":
-        await setupHusky();
-        break;
-      case "setup-template":
-        await setupTemplateUpstream();
+      case "decrypt-env":
+        if (!secret) {
+          throw new Error(
+            "Decryption step selected, but no --secret was provided.",
+          );
+        }
+        await decryptEnvFiles(secret);
         break;
       case "setup-railway":
         await setupRailway();
+        break;
+      case "setup-supabase-local":
+        await setupSupabaseLocal();
         break;
     }
   }
@@ -179,10 +275,9 @@ export const setupProject = async (
   showBanner();
 
   try {
-    // First, get the scope configuration
-    const config = await promptForScope();
+    // Initialize config to null
+    let config: RenameConfig | null = null;
 
-    // Then, select which steps to execute
     const { steps } = await inquirer.prompt([
       {
         type: "checkbox",
@@ -193,6 +288,8 @@ export const setupProject = async (
           value: step.value,
           checked: step.checked,
         })),
+        // Ensure at least one step is selected if needed, or handle empty selection later
+        // validate: (input) => input.length > 0 ? true : "Please select at least one step.",
       },
     ]);
 
@@ -201,8 +298,40 @@ export const setupProject = async (
       return;
     }
 
+    // Prompt for scope only if rename step is selected
+    if (steps.includes("rename-packages")) {
+      config = await promptForScope();
+    }
+
+    // --- Prompt for secret only if decrypt step is selected and secret not provided --- START
+    let finalSecret = options.secret; // Use CLI secret if provided
+    if (steps.includes("decrypt-env") && !finalSecret) {
+      console.log(
+        chalk.yellow(
+          "\n🔒 The 'Decrypt environment files' step requires a secret key.",
+        ),
+      );
+      const { secret } = await inquirer.prompt([
+        {
+          type: "password",
+          name: "secret",
+          message: "Enter the secret key to decrypt environment files:",
+          mask: "*",
+          validate: (input: string) => {
+            if (!input) {
+              return "Secret key cannot be empty.";
+            }
+            return true;
+          },
+        },
+      ]);
+      finalSecret = secret; // Use prompted secret
+    }
+    // --- Prompt for secret only if decrypt step is selected and secret not provided --- END
+
     console.log(chalk.blue("\n📦 Executing selected steps...\n"));
-    await executeSteps(steps, config);
+    // Pass the final secret (CLI option takes precedence over prompt)
+    await executeSteps(steps, config, finalSecret);
     console.log(chalk.green("\n✨ Project setup completed successfully!\n"));
   } catch (error) {
     console.error(chalk.red("\n❌ Project setup failed:"), error);
@@ -218,9 +347,12 @@ program
     "--only <step>",
     "Run only a specific setup step (railway or railway-env)",
   )
+  .option(
+    "-s, --secret <key>",
+    "The secret key for decrypting .env.encrypted files",
+  )
   .action((options) => setupProject(options));
 
-// Allow running directly from CLI
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   program.parse();
 }

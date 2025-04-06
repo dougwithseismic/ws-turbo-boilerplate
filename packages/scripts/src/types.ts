@@ -11,15 +11,14 @@ export type SetupStep = {
 };
 
 export type SetupStepValue =
-  | "clear-apps"
   | "rename-packages"
-  | "setup-env"
-  | "setup-husky"
-  | "setup-template"
-  | "setup-railway";
+  | "decrypt-env"
+  | "setup-railway"
+  | "setup-supabase-local";
 
 export type SetupOptions = {
   only?: "railway" | "railway-env";
+  secret?: string;
 };
 
 export const validateScope = (scope: string): boolean => {

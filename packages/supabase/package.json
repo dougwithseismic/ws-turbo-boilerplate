@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1"
+    "@supabase/supabase-js": "^2.49.1",
+    "chalk": "^5.4.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
@@ -16,11 +17,11 @@
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "name": "@repo/supabase",
+  "name": "@zer0/supabase",
   "private": true,
   "scripts": {
     "build": "tsup",
-    "clean": "rimraf .turbo node_modules dist",
+    "clean": "rm -rf dist node_modules",
     "db:diff": "supabase db diff",
     "db:generate": "supabase gen types typescript --local > src/types/database.types.ts",
     "db:pull": "supabase db pull",
@@ -28,9 +29,21 @@
     "db:reset": "supabase db reset",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
-    "dev": "tsup --watch",
+    "dev": "pnpm run build && pnpm run supabase:start",
     "generate:modules": "tsx scripts/generate-modules.ts",
-    "lint": "eslint src/",
+    "lint": "eslint . --max-warnings 0",
+    "supabase:db:migrate": "npx supabase db migrate",
+    "supabase:db:push": "npx supabase db push",
+    "supabase:db:reset": "npx supabase db reset",
+    "supabase:db:rollback": "npx supabase db rollback",
+    "supabase:db:status": "npx supabase db status",
+    "supabase:gen:keys": "tsx ./scripts/update-env.ts",
+    "supabase:gen:types": "npx supabase gen types typescript --local > ./src/types/database.types.ts && prettier --write ./src/types/database.types.ts",
+    "supabase:link": "npx supabase link",
+    "supabase:login": "npx supabase login",
+    "supabase:start": "npx supabase start -x studio,imgproxy,edge-runtime",
+    "supabase:stop": "npx supabase stop",
+    "supabase:studio": "npx supabase studio",
     "typecheck": "tsc --noEmit"
   },
   "types": "./dist/index.d.ts",

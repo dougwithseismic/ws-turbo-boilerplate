@@ -1,5 +1,5 @@
 {
-  "extends": "@repo/typescript-config/base",
+  "extends": "@zer0/typescript-config/base",
   "compilerOptions": {
     "outDir": "dist",
     "module": "ESNext",

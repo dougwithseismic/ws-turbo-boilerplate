@@ -43,6 +43,8 @@
     "url": "https://github.com/dougwithseismic/ws-turbo-boilerplate"
   },
   "dependencies": {
-    "@types/node": "^22.13.10"
+    "@types/node": "^22.13.10",
+    "chalk": "^5.4.1",
+    "yargs": "^17.7.2"
   }
 }
