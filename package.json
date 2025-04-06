@@ -1,0 +1,50 @@
+{
+  "name": "ws-turbo-boilerplate",
+  "version": "0.0.0",
+  "description": "The WS Way to Turbo",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types",
+    "setup:project": "tsx packages/scripts/src/setup.ts",
+    "setup:railway": "tsx packages/scripts/src/setup.ts --only railway",
+    "railway:sync-env": "tsx packages/scripts/src/setup.ts --only railway-env",
+    "prepare": "husky",
+    "template:fetch": "git fetch template",
+    "template:merge": "git merge template/main --allow-unrelated-histories",
+    "template:update": "pnpm template:fetch && pnpm template:merge"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.3",
+    "tsx": "^4.7.1",
+    "turbo": "^2.4.4",
+    "typescript": "5.8.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dougwithseismic/ws-turbo-boilerplate"
+  },
+  "dependencies": {
+    "@types/node": "^22.13.10",
+    "chalk": "^5.4.1",
+    "yargs": "^17.7.2"
+  }
+}

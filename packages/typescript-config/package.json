@@ -1,0 +1,14 @@
+{
+  "exports": {
+    "./base": "./base.json",
+    "./nextjs": "./nextjs.json",
+    "./react-library": "./react-library.json"
+  },
+  "license": "MIT",
+  "name": "@zer0/typescript-config",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "0.0.0"
+}

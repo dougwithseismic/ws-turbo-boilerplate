@@ -1,0 +1,29 @@
+{
+  "name": "@zer0/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./setup": "./src/setup.ts",
+    "./rename-packages": "./src/rename-packages.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@zer0/eslint-config": "workspace:*",
+    "@zer0/typescript-config": "workspace:*",
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^22.13.9",
+    "eslint": "^9.22.0",
+    "typescript": "5.8.2"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.10",
+    "inquirer": "^9.2.15"
+  }
+}
