@@ -1,8 +1,4 @@
-import {
-  SupabaseClient,
-  PostgrestSingleResponse,
-  PostgrestResponse,
-} from "@supabase/supabase-js";
+import { SupabaseClient, PostgrestSingleResponse } from "@supabase/supabase-js";
 import {
   Database,
   Tables,
@@ -10,198 +6,115 @@ import {
   TablesUpdate,
 } from "../types/database.types";
 
+// Define table-specific types
 export type Profile = Tables<"profiles">;
 export type ProfileInsert = TablesInsert<"profiles">;
 export type ProfileUpdate = TablesUpdate<"profiles">;
 
 /**
- * Fetches a profile by user ID
- *
+ * Fetches a profiles record by its primary key (id).
+ * @param supabase The Supabase client instance.
+ * @param id The primary key of the profiles to fetch.
+ * @returns A promise that resolves to the fetched profiles record or null if not found.
  * @example
- * ```typescript
- * const { data, error } = await fetchProfileByUserId({
- *   supabase,
- *   userId: "123e4567-e89b-12d3-a456-426614174000"
- * });
- *
- * if (error) {
- *   console.error('Error:', error.message);
- *   return;
- * }
- *
- * console.log('Profile:', data);
- * ```
+ * const { data, error } = await fetchProfileById({ supabase, id: "user-uuid-string" });
  */
-export const fetchProfileByUserId = async ({
+export const fetchProfileById = async ({
   supabase,
-  userId,
+  id,
 }: {
   supabase: SupabaseClient<Database>;
-  userId: string;
+  id: string;
 }): Promise<PostgrestSingleResponse<Profile>> => {
-  return await supabase
-    .from("profiles")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+  return supabase.from("profiles").select("*").eq("id", id).single();
 };
 
 /**
- * Fetches a profile by username
- *
+ * Creates a new profiles record.
+ * Note: Typically, profiles are created via triggers on auth.users table.
+ * Use this function cautiously.
+ * @param supabase The Supabase client instance.
+ * @param insertData The data to insert for the new profiles.
+ * @returns A promise that resolves to the newly created profiles record.
  * @example
- * ```typescript
- * const { data, error } = await fetchProfileByUsername({
- *   supabase,
- *   username: "johndoe"
- * });
- *
- * if (error) {
- *   console.error('Error:', error.message);
- *   return;
- * }
- *
- * console.log('Profile:', data);
- * ```
- */
-export const fetchProfileByUsername = async ({
-  supabase,
-  username,
-}: {
-  supabase: SupabaseClient<Database>;
-  username: string;
-}): Promise<PostgrestSingleResponse<Profile>> => {
-  return await supabase
-    .from("profiles")
-    .select("*")
-    .eq("username", username)
-    .single();
-};
-
-/**
- * Creates a new profile
- *
- * @example
- * ```typescript
- * const { data, error } = await createProfile({
- *   supabase,
- *   profile: {
- *     user_id: "123e4567-e89b-12d3-a456-426614174000",
- *     username: "johndoe",
- *     full_name: "John Doe",
- *     email: "john@example.com"
- *   }
- * });
- *
- * if (error) {
- *   console.error('Error:', error.message);
- *   return;
- * }
- *
- * console.log('Created profile:', data);
- * ```
+ * const { data, error } = await createProfile({ supabase, insertData: { id: 'user-uuid', username: 'newuser' } });
  */
 export const createProfile = async ({
   supabase,
-  profile,
+  insertData,
 }: {
   supabase: SupabaseClient<Database>;
-  profile: ProfileInsert;
+  insertData: ProfileInsert;
 }): Promise<PostgrestSingleResponse<Profile>> => {
-  return await supabase.from("profiles").insert(profile).select().single();
+  // Profiles usually require the ID from the auth.users table
+  if (!insertData.id) {
+    return {
+      data: null,
+      error: {
+        message: "Profile insert requires an id.",
+        details: "",
+        hint: "",
+        code: "400",
+      },
+    } as any; // Basic error structure
+  }
+  return supabase.from("profiles").insert(insertData).select().single();
 };
 
 /**
- * Updates an existing profile
- *
+ * Updates an existing profiles record by its primary key (id).
+ * @param supabase The Supabase client instance.
+ * @param id The primary key of the profiles to update.
+ * @param updateData The data to update for the profiles.
+ * @returns A promise that resolves to the updated profiles record.
  * @example
- * ```typescript
- * const { data, error } = await updateProfile({
- *   supabase,
- *   userId: "123e4567-e89b-12d3-a456-426614174000",
- *   updates: {
- *     bio: "Hello, World!",
- *     website: "https://example.com"
- *   }
- * });
- *
- * if (error) {
- *   console.error('Error:', error.message);
- *   return;
- * }
- *
- * console.log('Updated profile:', data);
- * ```
+ * const { data, error } = await updateProfile({ supabase, id: "user-uuid-string", updateData: { username: 'updated_username' } });
  */
 export const updateProfile = async ({
   supabase,
-  userId,
-  updates,
+  id,
+  updateData,
 }: {
   supabase: SupabaseClient<Database>;
-  userId: string;
-  updates: ProfileUpdate;
+  id: string;
+  updateData: ProfileUpdate;
 }): Promise<PostgrestSingleResponse<Profile>> => {
-  return await supabase
+  return supabase
     .from("profiles")
-    .update(updates)
-    .eq("user_id", userId)
+    .update(updateData)
+    .eq("id", id)
     .select()
     .single();
 };
 
 /**
- * Deletes a profile
- *
+ * Deletes a profiles record by its primary key (id).
+ * Note: Deleting a profile might have cascading effects or orphaned data.
+ * Ensure referential integrity is handled (e.g., via database constraints or application logic).
+ * @param supabase The Supabase client instance.
+ * @param id The primary key of the profiles to delete.
+ * @returns A promise that resolves with no data upon successful deletion.
  * @example
- * ```typescript
- * const { error } = await deleteProfile({
- *   supabase,
- *   userId: "123e4567-e89b-12d3-a456-426614174000"
- * });
- *
- * if (error) {
- *   console.error('Error:', error.message);
- *   return;
- * }
- *
- * console.log('Profile deleted successfully');
- * ```
+ * const { error } = await deleteProfile({ supabase, id: "user-uuid-string" });
  */
 export const deleteProfile = async ({
   supabase,
-  userId,
+  id,
 }: {
   supabase: SupabaseClient<Database>;
-  userId: string;
+  id: string;
 }): Promise<PostgrestSingleResponse<null>> => {
-  return await supabase
-    .from("profiles")
-    .delete()
-    .eq("user_id", userId)
-    .single();
+  return supabase.from("profiles").delete().eq("id", id);
 };
 
 /**
- * Lists all profiles with optional pagination
- *
+ * Lists profiles records with pagination.
+ * @param supabase The Supabase client instance.
+ * @param page The page number to fetch (default: 1).
+ * @param limit The number of records per page (default: 10).
+ * @returns A promise that resolves to an array of profiles records.
  * @example
- * ```typescript
- * // Fetch first page with 20 items per page
- * const { data, error } = await listProfiles({
- *   supabase,
- *   page: 1,
- *   limit: 20
- * });
- *
- * if (error) {
- *   console.error('Error:', error.message);
- *   return;
- * }
- *
- * console.log('Profiles:', data);
- * console.log('Count:', data.length);
- * ```
+ * const { data, error } = await listProfiles({ supabase, page: 1, limit: 50 });
  */
 export const listProfiles = async ({
   supabase,
@@ -212,8 +125,7 @@ export const listProfiles = async ({
   page?: number;
   limit?: number;
 }): Promise<PostgrestSingleResponse<Profile[]>> => {
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-
-  return await supabase.from("profiles").select("*").range(from, to);
+  const rangeStart = (page - 1) * limit;
+  const rangeEnd = rangeStart + limit - 1;
+  return supabase.from("profiles").select("*").range(rangeStart, rangeEnd);
 };

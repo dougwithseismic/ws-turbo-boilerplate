@@ -154,6 +154,9 @@ importers:
       "@supabase/supabase-js":
         specifier: ^2.49.1
         version: 2.49.1
+      "@tanstack/react-query":
+        specifier: ^5.71.10
+        version: 5.71.10(react@19.0.0)
       chalk:
         specifier: ^5.4.1
         version: 5.4.1
@@ -1299,6 +1302,20 @@ packages:
       {
         integrity: sha512-6s5nJODm98F++QT49qn8xJKHQRamhYHfMi3X7/ltxiSQ9dyRsaFSfFkfaMsanWzf+TMYQtbk8mt5f6cCVXJwfg==,
       }
+
+  "@tanstack/query-core@5.71.10":
+    resolution:
+      {
+        integrity: sha512-/fKEY8fO1nbszfrBatzmhJa1nEwIKn0c6Tv2A1ocSA5OiD2GukOIV8nnBbvJRgZb/VIoBy9/N4PVbABI8YQLow==,
+      }
+
+  "@tanstack/react-query@5.71.10":
+    resolution:
+      {
+        integrity: sha512-mQYM/ObpL8YMDz8vCoUuHkbe8Yu7NnVRH8aBaBa/3zlufjp1f1VuWjeO3TcumNHfuVMDwEAGinsgwrB7OKADiQ==,
+      }
+    peerDependencies:
+      react: ^18 || ^19
 
   "@tootallnate/quickjs-emscripten@0.23.0":
     resolution:
@@ -6251,6 +6268,13 @@ snapshots:
       "@tailwindcss/oxide": 4.1.3
       postcss: 8.5.3
       tailwindcss: 4.1.3
+
+  "@tanstack/query-core@5.71.10": {}
+
+  "@tanstack/react-query@5.71.10(react@19.0.0)":
+    dependencies:
+      "@tanstack/query-core": 5.71.10
+      react: 19.0.0
 
   "@tootallnate/quickjs-emscripten@0.23.0": {}
 

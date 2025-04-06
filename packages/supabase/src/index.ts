@@ -1,3 +1,2 @@
 export * from "./types";
-
-export * from "./modules/profiles";
+export * from "./modules/";

@@ -15,4 +15,4 @@ export interface SupabaseResponse<T> {
 }
 
 // Re-export database types
-export type { Database } from "./database.types";
+export type * from "./database.types";
