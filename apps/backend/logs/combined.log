@@ -1,0 +1,6 @@
+{"level":"info","message":"Server starting in development mode on port 420","service":"zer0-backend","timestamp":"2025-04-06 17:51:30"}
+{"level":"info","message":"🚀 Server ready at http://localhost:420","service":"zer0-backend","timestamp":"2025-04-06 17:51:30"}
+{"level":"info","message":"📚 API Docs available at http://localhost:420/api-docs","service":"zer0-backend","timestamp":"2025-04-06 17:51:30"}
+{"level":"debug","message":"Development mode: IP whitelist check bypassed","service":"zer0-backend","timestamp":"2025-04-06 17:51:34"}
+{"level":"debug","message":"Development mode: IP whitelist check bypassed","service":"zer0-backend","timestamp":"2025-04-06 17:51:35"}
+{"level":"debug","message":"Development mode: IP whitelist check bypassed","service":"zer0-backend","timestamp":"2025-04-06 17:51:35"}

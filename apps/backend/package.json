@@ -1,0 +1,49 @@
+{
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.2",
+    "@asteasolutions/zod-to-openapi": "^7.3.0",
+    "@bull-board/api": "^6.7.10",
+    "@bull-board/express": "^6.7.10",
+    "@bull-board/hono": "^6.7.10",
+    "@deepgram/sdk": "^3.11.3",
+    "@hono/node-server": "^1.8.2",
+    "@hono/swagger-ui": "^0.5.1",
+    "@hono/zod-openapi": "^0.19.2",
+    "@hono/zod-validator": "^0.4.3",
+    "@supabase/supabase-js": "^2.49.1",
+    "@types/cron": "^2.4.3",
+    "@zer0/supabase": "workspace:*",
+    "@zer0/typescript-config": "workspace:*",
+    "ai": "^4.2.2",
+    "bullmq": "^5.44.4",
+    "cron": "^4.1.1",
+    "dotenv": "^16.4.7",
+    "hono": "^4.1.2",
+    "hono-rate-limiter": "^0.4.2",
+    "ioredis": "^5.6.0",
+    "react": "^19.0.0",
+    "winston": "^3.17.0",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.5",
+    "zod-to-openapi": "^0.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.28",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "eslint": "^8.57.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.2"
+  },
+  "name": "backend",
+  "private": true,
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint src/**/*.ts",
+    "start": "node dist/index.js"
+  },
+  "version": "1.0.0"
+}
