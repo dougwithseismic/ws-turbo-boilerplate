@@ -1,1 +1,1 @@
-export * from "@repo/supabase";
+export * from "@zer0/supabase";

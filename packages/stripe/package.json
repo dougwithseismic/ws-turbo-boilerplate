@@ -2,6 +2,7 @@
   "dependencies": {
     "@stripe/stripe-js": "^7.0.0",
     "@tanstack/react-query": "^5.71.10",
+    "@zer0/wasm-camera-fx": "workspace:*",
     "stripe": "^18.0.0"
   },
   "devDependencies": {
