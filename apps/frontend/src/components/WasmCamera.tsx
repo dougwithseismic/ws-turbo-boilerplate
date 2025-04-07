@@ -7,6 +7,8 @@ import {
   applyHueRotation,
   applySpiralDistortion,
   applyWormholeDistortion,
+  applyBrightnessContrast,
+  applyGammaCorrection,
 } from "@zer0/wasm-camera-fx";
 
 type EffectType =
@@ -15,7 +17,9 @@ type EffectType =
   | "sobel"
   | "hue"
   | "spiral"
-  | "wormhole";
+  | "wormhole"
+  | "brightnessContrast"
+  | "gamma";
 
 const WasmCamera: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -29,6 +33,9 @@ const WasmCamera: React.FC = () => {
   const spiralDirection = useRef<number>(1);
   const wormholeFactor = useRef<number>(0);
   const wormholeDirection = useRef<number>(1);
+  const [brightness, setBrightness] = useState<number>(0);
+  const [contrast, setContrast] = useState<number>(0);
+  const [gamma, setGamma] = useState<number>(1);
 
   // Initialize camera and trigger WASM loading
   useEffect(() => {
@@ -102,7 +109,7 @@ const WasmCamera: React.FC = () => {
       return;
     }
 
-    let isProcessingFrame = false;
+    const isProcessingFrame = false;
 
     const loop = async () => {
       // Ensure loop stops if component is unmounted or video stops
@@ -119,12 +126,12 @@ const WasmCamera: React.FC = () => {
       }
 
       // Prevent concurrent processing if an effect takes too long
-      if (isProcessingFrame) {
-        animationFrameId.current = requestAnimationFrame(loop);
-        return;
-      }
+      // if (isProcessingFrame) { // Temporarily removed for smoother slider updates
+      //   animationFrameId.current = requestAnimationFrame(loop);
+      //   return;
+      // }
 
-      isProcessingFrame = true;
+      // isProcessingFrame = true; // Temporarily removed
 
       // Ensure canvas size matches video
       if (
@@ -177,6 +184,12 @@ const WasmCamera: React.FC = () => {
               }
               await applyWormholeDistortion(imageData, wormholeFactor.current);
               break;
+            case "brightnessContrast":
+              await applyBrightnessContrast(imageData, brightness, contrast);
+              break;
+            case "gamma":
+              await applyGammaCorrection(imageData, gamma);
+              break;
           }
 
           // Put the modified data back onto the canvas
@@ -187,13 +200,13 @@ const WasmCamera: React.FC = () => {
             `Processing error: ${err instanceof Error ? err.message : String(err)}`,
           );
           // Stop the loop on error by not requesting the next frame
-          isProcessingFrame = false;
+          // isProcessingFrame = false; // Temporarily removed
           return; // Exit loop
         }
       }
       // If effect is 'none', the canvas already has the original frame drawn.
 
-      isProcessingFrame = false;
+      // isProcessingFrame = false; // Temporarily removed
       animationFrameId.current = requestAnimationFrame(loop);
     };
 
@@ -207,7 +220,7 @@ const WasmCamera: React.FC = () => {
         animationFrameId.current = null;
       }
     };
-  }, [isWasmReady, currentEffect]); // Re-run loop setup if WASM ready or effect changes
+  }, [isWasmReady, currentEffect, brightness, contrast, gamma]); // Re-run loop setup if WASM ready or effect changes
 
   return (
     <div>
@@ -276,8 +289,65 @@ const WasmCamera: React.FC = () => {
           disabled={!isWasmReady || currentEffect === "wormhole"}
         >
           Wormhole
+        </button>{" "}
+        <button
+          onClick={() => setCurrentEffect("brightnessContrast")}
+          disabled={!isWasmReady || currentEffect === "brightnessContrast"}
+        >
+          Brightness/Contrast
+        </button>{" "}
+        <button
+          onClick={() => setCurrentEffect("gamma")}
+          disabled={!isWasmReady || currentEffect === "gamma"}
+        >
+          Gamma
         </button>
       </div>
+      {currentEffect === "brightnessContrast" && (
+        <div style={{ marginTop: "10px" }}>
+          <label>
+            Brightness ({brightness.toFixed(2)}):
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.05"
+              value={brightness}
+              onChange={(e) => setBrightness(parseFloat(e.target.value))}
+              disabled={!isWasmReady}
+            />
+          </label>
+          <br />
+          <label>
+            Contrast ({contrast.toFixed(2)}):
+            <input
+              type="range"
+              min="-1"
+              max="1"
+              step="0.05"
+              value={contrast}
+              onChange={(e) => setContrast(parseFloat(e.target.value))}
+              disabled={!isWasmReady}
+            />
+          </label>
+        </div>
+      )}
+      {currentEffect === "gamma" && (
+        <div style={{ marginTop: "10px" }}>
+          <label>
+            Gamma ({gamma.toFixed(2)}):
+            <input
+              type="range"
+              min="0.1"
+              max="3.0"
+              step="0.05"
+              value={gamma}
+              onChange={(e) => setGamma(parseFloat(e.target.value))}
+              disabled={!isWasmReady}
+            />
+          </label>
+        </div>
+      )}
       {!isWasmReady && !error && <p>Loading WASM module...</p>}
       {isWasmReady && <p>WASM module ready. Current effect: {currentEffect}</p>}
     </div>

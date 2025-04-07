@@ -480,11 +480,14 @@ var Module = (() => {
     var _spiralDistortion = (Module["_spiralDistortion"] = wasmExports["g"]);
     var _wormholeDistortion = (Module["_wormholeDistortion"] =
       wasmExports["h"]);
-    var _malloc = (Module["_malloc"] = wasmExports["j"]);
-    var _free = (Module["_free"] = wasmExports["k"]);
-    var __emscripten_stack_restore = wasmExports["l"];
-    var __emscripten_stack_alloc = wasmExports["m"];
-    var _emscripten_stack_get_current = wasmExports["n"];
+    var _brightnessContrast = (Module["_brightnessContrast"] =
+      wasmExports["i"]);
+    var _gammaCorrection = (Module["_gammaCorrection"] = wasmExports["j"]);
+    var _malloc = (Module["_malloc"] = wasmExports["l"]);
+    var _free = (Module["_free"] = wasmExports["m"]);
+    var __emscripten_stack_restore = wasmExports["n"];
+    var __emscripten_stack_alloc = wasmExports["o"];
+    var _emscripten_stack_get_current = wasmExports["p"];
     Module["cwrap"] = cwrap;
     function run() {
       if (runDependencies > 0) {

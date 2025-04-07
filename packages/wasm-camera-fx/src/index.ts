@@ -40,6 +40,19 @@ interface EmscriptenModule {
     height: number,
     pullFactor: number,
   ): void; // Input/Output
+  _brightnessContrast(
+    imageDataPtr: number,
+    width: number,
+    height: number,
+    brightness: number,
+    contrast: number,
+  ): void; // In-place
+  _gammaCorrection(
+    imageDataPtr: number,
+    width: number,
+    height: number,
+    gamma: number,
+  ): void; // In-place
 }
 
 // Type for the wrapped grayscale function (In-place)
@@ -83,12 +96,31 @@ type WormholeDistortionFunc = (
   pullFactor: number,
 ) => void;
 
+// Type for the wrapped Brightness/Contrast function (In-place)
+type BrightnessContrastFunc = (
+  imageDataPtr: number,
+  width: number,
+  height: number,
+  brightness: number,
+  contrast: number,
+) => void;
+
+// Type for the wrapped Gamma Correction function (In-place)
+type GammaCorrectionFunc = (
+  imageDataPtr: number,
+  width: number,
+  height: number,
+  gamma: number,
+) => void;
+
 let moduleInstance: EmscriptenModule | null = null;
 let wrappedGrayscale: GrayscaleFunc | null = null;
 let wrappedSobel: SobelFunc | null = null;
 let wrappedHueRotate: HueRotateFunc | null = null;
 let wrappedSpiral: SpiralDistortionFunc | null = null;
 let wrappedWormhole: WormholeDistortionFunc | null = null;
+let wrappedBrightnessContrast: BrightnessContrastFunc | null = null;
+let wrappedGamma: GammaCorrectionFunc | null = null;
 
 // Asynchronously initialize the WASM module
 export const initializeWasm = async (): Promise<void> => {
@@ -150,6 +182,40 @@ export const initializeWasm = async (): Promise<void> => {
       "number", // pullFactor
     ]) as WormholeDistortionFunc;
 
+    // Check cwrap result directly
+    const bcFunc = moduleInstance.cwrap("brightnessContrast", null, [
+      "number",
+      "number",
+      "number",
+      "number",
+      "number",
+    ]);
+    console.log(
+      "Direct cwrap result for _brightnessContrast:",
+      typeof bcFunc,
+      !!bcFunc,
+    ); // New log
+    wrappedBrightnessContrast = bcFunc as BrightnessContrastFunc;
+    console.log(
+      "Assigned wrappedBrightnessContrast:",
+      typeof wrappedBrightnessContrast,
+      !!wrappedBrightnessContrast,
+    ); // New log
+
+    const gammaFunc = moduleInstance.cwrap("gammaCorrection", null, [
+      "number",
+      "number",
+      "number",
+      "number",
+    ]);
+    console.log(
+      "Direct cwrap result for _gammaCorrection:",
+      typeof gammaFunc,
+      !!gammaFunc,
+    ); // New log
+    wrappedGamma = gammaFunc as GammaCorrectionFunc;
+    console.log("Assigned wrappedGamma:", typeof wrappedGamma, !!wrappedGamma); // New log
+
     console.log("WASM functions wrapped.");
   } catch (error) {
     console.error("Error initializing WASM module:", error);
@@ -159,6 +225,8 @@ export const initializeWasm = async (): Promise<void> => {
     wrappedHueRotate = null;
     wrappedSpiral = null;
     wrappedWormhole = null;
+    wrappedBrightnessContrast = null;
+    wrappedGamma = null;
     throw error; // Re-throw for upstream handling
   }
 };
@@ -177,9 +245,20 @@ const applyWasmEffect = async (
 ): Promise<void> => {
   await initializeWasm(); // Ensure module is ready
 
-  if (!moduleInstance || !effectFunc) {
+  const funcType = typeof effectFunc;
+  const funcName = effectFunc?.name || "N/A";
+  console.log(
+    `applyWasmEffect - Module ready: ${!!moduleInstance}, Effect func type: ${funcType}, name: ${funcName}, available: ${!!effectFunc}`,
+  );
+
+  if (!moduleInstance || funcType !== "function") {
+    console.error("Problem detected in applyWasmEffect:", {
+      moduleInstanceExists: !!moduleInstance,
+      effectFuncExists: !!effectFunc,
+      effectFuncType: funcType,
+    });
     throw new Error(
-      "WASM module not initialized or the specific effect function is not available.",
+      `WASM module not initialized or the specific effect function is not available/not a function. Type was: ${funcType}`,
     );
   }
 
@@ -201,7 +280,7 @@ const applyWasmEffect = async (
       if (outputPtr === 0)
         throw new Error("Failed to allocate output memory in WASM.");
       // Call function with input and output pointers
-      effectFunc(inputPtr, outputPtr, width, height, ...args);
+      effectFunc?.(inputPtr, outputPtr, width, height, ...args);
       // Copy result from WASM output buffer back to JS ImageData
       const resultView = moduleInstance.HEAPU8.slice(
         outputPtr,
@@ -210,7 +289,7 @@ const applyWasmEffect = async (
       data.set(resultView);
     } else {
       // For in-place effects, call with the single (input) pointer
-      effectFunc(inputPtr, width, height, ...args);
+      effectFunc?.(inputPtr, width, height, ...args);
       // Copy potentially modified data from WASM input buffer back to JS ImageData
       const resultView = moduleInstance.HEAPU8.slice(
         inputPtr,
@@ -219,7 +298,6 @@ const applyWasmEffect = async (
       data.set(resultView);
     }
   } catch (error) {
-    const funcName = effectFunc?.name || "unknown function";
     console.error(`Error applying WASM effect (${funcName}):`, error);
     throw error; // Re-throw error
   } finally {
@@ -263,6 +341,43 @@ export const applyWormholeDistortion = async (
   pullFactor: number,
 ): Promise<void> => {
   await applyWasmEffect(imageData, wrappedWormhole, "input-output", pullFactor);
+};
+
+/** Applies brightness and contrast adjustment (in-place) */
+export const applyBrightnessContrast = async (
+  imageData: ImageData,
+  brightness: number, // Suggested range: -1 to 1
+  contrast: number, // Suggested range: -1 to 1
+): Promise<void> => {
+  // Check state *before* calling applyWasmEffect
+  console.log(
+    "applyBrightnessContrast called. wrappedBrightnessContrast is:",
+    typeof wrappedBrightnessContrast,
+    !!wrappedBrightnessContrast,
+  ); // New log
+  await applyWasmEffect(
+    imageData,
+    wrappedBrightnessContrast,
+    "in-place",
+    brightness,
+    contrast,
+  );
+};
+
+/** Applies gamma correction (in-place) */
+export const applyGammaCorrection = async (
+  imageData: ImageData,
+  gamma: number, // Suggested range: > 0, e.g., 0.1 to 5.0. 1.0 is no change.
+): Promise<void> => {
+  // Check state *before* calling applyWasmEffect
+  console.log(
+    "applyGammaCorrection called. wrappedGamma is:",
+    typeof wrappedGamma,
+    !!wrappedGamma,
+  ); // New log
+  // Ensure gamma is positive
+  const safeGamma = Math.max(0.01, gamma); // Prevent division by zero or invalid pow
+  await applyWasmEffect(imageData, wrappedGamma, "in-place", safeGamma);
 };
 
 // Optional: Export the initialization function if manual control is needed

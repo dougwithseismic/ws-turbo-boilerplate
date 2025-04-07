@@ -17,7 +17,7 @@
   "private": true,
   "scripts": {
     "build": "tsup && npm run build:wasm",
-    "build:wasm": "node -e \"require('fs').mkdirSync('wasm', { recursive: true })\" && emcc cpp/effects.cpp -o wasm/effects.js -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORTED_RUNTIME_METHODS=['cwrap','malloc','free'] -s EXPORTED_FUNCTIONS=['_grayscale','_malloc','_free','_sobelEdgeDetection','_hueRotate','_spiralDistortion','_wormholeDistortion']",
+    "build:wasm": "node -e \"require('fs').mkdirSync('wasm', { recursive: true })\" && emcc cpp/effects.cpp -o wasm/effects.js -O3 -s WASM=1 -s MODULARIZE=1 -s EXPORTED_RUNTIME_METHODS=['cwrap'] -s EXPORTED_FUNCTIONS=['_grayscale','_malloc','_free','_sobelEdgeDetection','_hueRotate','_spiralDistortion','_brightnessContrast','_gammaCorrection']",
     "clean": "rm -rf dist node_modules .turbo wasm",
     "dev": "tsup --watch",
     "lint": "eslint . --max-warnings 0",

@@ -94,6 +94,11 @@ void sampleBilinear(const uint8_t* srcData, int width, int height, double u, dou
                               (ptr3[3] * u_opposite + ptr4[3] * u_ratio) * v_ratio);
 }
 
+// Helper: Clamp value to 0-255
+uint8_t clamp(double val) {
+    return static_cast<uint8_t>(std::max(0.0, std::min(255.0, val)));
+}
+
 // Keep the function available after optimizations and declare it with C linkage
 extern "C" {
 
@@ -259,6 +264,61 @@ void wormholeDistortion(const uint8_t* inputData, uint8_t* outputData, int width
             outputData[outIndex + 2] = b;
             outputData[outIndex + 3] = a;
         }
+    }
+}
+
+// Brightness/Contrast: Modifies in-place
+EMSCRIPTEN_KEEPALIVE
+void brightnessContrast(uint8_t* imageData, int width, int height, double brightness, double contrast) {
+    int numPixels = width * height;
+    // Adjust contrast factor (range often -1 to 1 maps to 0 to 2)
+    double factor = (1.0 + contrast);
+    // Center brightness adjustment around 128
+    double brightnessAdjust = brightness * 255.0; 
+
+    for (int i = 0; i < numPixels * 4; i += 4) {
+        double r = imageData[i];
+        double g = imageData[i + 1];
+        double b = imageData[i + 2];
+
+        // Apply contrast: scale distance from midpoint (128)
+        r = 128.0 + factor * (r - 128.0);
+        g = 128.0 + factor * (g - 128.0);
+        b = 128.0 + factor * (b - 128.0);
+
+        // Apply brightness
+        r += brightnessAdjust;
+        g += brightnessAdjust;
+        b += brightnessAdjust;
+
+        // Clamp and store
+        imageData[i] = clamp(r);
+        imageData[i + 1] = clamp(g);
+        imageData[i + 2] = clamp(b);
+        // Alpha unchanged
+    }
+}
+
+// Gamma Correction: Modifies in-place
+EMSCRIPTEN_KEEPALIVE
+void gammaCorrection(uint8_t* imageData, int width, int height, double gamma) {
+    int numPixels = width * height;
+    // Ensure gamma is positive to avoid issues
+    gamma = std::max(0.01, gamma); 
+    double gammaInv = 1.0 / gamma;
+
+    // REMOVED: Lookup table generation
+    // uint8_t gammaTable[256];
+    // for(int i = 0; i < 256; ++i) {
+    //     gammaTable[i] = clamp(pow(i / 255.0, gammaInv) * 255.0);
+    // }
+
+    for (int i = 0; i < numPixels * 4; i += 4) {
+        // Apply gamma correction directly
+        imageData[i] = clamp(pow(imageData[i] / 255.0, gammaInv) * 255.0); // R
+        imageData[i + 1] = clamp(pow(imageData[i + 1] / 255.0, gammaInv) * 255.0); // G
+        imageData[i + 2] = clamp(pow(imageData[i + 2] / 255.0, gammaInv) * 255.0); // B
+        // Alpha unchanged
     }
 }
 
