@@ -68,6 +68,9 @@ importers:
       "@hono/zod-validator":
         specifier: ^0.4.3
         version: 0.4.3(hono@4.7.5)(zod@3.24.2)
+      "@stripe/stripe-js":
+        specifier: ^7.0.0
+        version: 7.0.0
       "@supabase/supabase-js":
         specifier: ^2.49.4
         version: 2.49.4
@@ -107,6 +110,9 @@ importers:
       react:
         specifier: ^19.1.0
         version: 19.1.0
+      stripe:
+        specifier: ^18.0.0
+        version: 18.0.0
       winston:
         specifier: ^3.17.0
         version: 3.17.0
@@ -225,6 +231,9 @@ importers:
       "@radix-ui/react-tooltip":
         specifier: ^1.1.8
         version: 1.1.8(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      "@stripe/stripe-js":
+        specifier: ^7.0.0
+        version: 7.0.0
       "@supabase/auth-ui-react":
         specifier: ^0.4.7
         version: 0.4.7(@supabase/supabase-js@2.49.4)
@@ -312,6 +321,9 @@ importers:
       sonner:
         specifier: ^2.0.3
         version: 2.0.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      stripe:
+        specifier: ^18.0.0
+        version: 18.0.0
       tailwind-merge:
         specifier: ^3.2.0
         version: 3.2.0

@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+
+config();
 // Helper function to parse comma-separated strings into Sets
 const parseCommaSeparatedList = (value: string): Set<string> =>
   new Set(value.split(",").map((item) => item.trim()));
@@ -33,11 +36,6 @@ export const SECURITY_CONFIG = {
   WHITELISTED_IPS: parseCommaSeparatedList(
     process.env.WHITELISTED_IPS || "127.0.0.1,::1,::ffff:127.0.0.1,0.0.0.0",
   ),
-};
-
-// AI configuration
-export const AI_CONFIG = {
-  OPENAI_API_KEY: getRequiredEnvVar("OPENAI_API_KEY"),
 };
 
 // Redis configuration

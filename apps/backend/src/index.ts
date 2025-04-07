@@ -5,14 +5,13 @@ import { config } from "dotenv";
 import { mkdirSync } from "fs";
 import { rateLimiter } from "hono-rate-limiter";
 import { cors } from "hono/cors";
-import { logger as honoLogger } from "hono/logger";
 import { RATE_LIMIT_CONFIG, SERVER_CONFIG } from "./config";
 import { ipWhitelist } from "./middleware/ip-whitelist";
 import logger from "./utils/logger";
-
 config();
 
-console.log("?FFF");
+// Import webhook routes
+import webhookRoutes from "./modules/stripe/webhooks.routes";
 
 // Create logs directory if it doesn't exist
 try {
@@ -69,6 +68,9 @@ app.doc("/api-docs/openapi.json", {
 
 // Swagger UI endpoint
 app.get("/api-docs", swaggerUI({ url: "/api-docs/openapi.json" }));
+
+// Mount webhook routes
+app.route("/webhooks", webhookRoutes);
 
 // Routes
 app.get("/", (c) => {

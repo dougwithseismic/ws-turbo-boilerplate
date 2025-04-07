@@ -6,17 +6,13 @@ import {
   AuthResponse,
   AuthResponseWithSession,
   AuthSession,
+  AuthError,
 } from "../types";
 import {
   AuthError as SupabaseAuthError,
   Session,
   User,
 } from "@supabase/supabase-js";
-
-// Basic error handling structure
-interface AuthError extends Error {
-  code?: string;
-}
 
 // Refined handler specifically for actions returning user/session data
 async function handleAuthSessionResponse(
@@ -63,8 +59,20 @@ export const executeSignUp = async (
   data: AuthFormData,
 ): Promise<AuthResponseWithSession> => {
   const supabase = await createSupabaseServerClient();
-  // Ensure options.data structure matches your profiles table or requirements
-  const options = data.fullName ? { data: { full_name: data.fullName } } : {};
+  const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/dashboard`;
+
+  // Properly type the options object to include both data and emailRedirectTo
+  const options: {
+    data?: { full_name: string };
+    emailRedirectTo?: string;
+  } = {};
+
+  if (data.fullName) {
+    options.data = { full_name: data.fullName };
+  }
+
+  // Fix linter error by ensuring redirectUrl is a string
+  options.emailRedirectTo = redirectUrl || "";
 
   return handleAuthSessionResponse(
     supabase.auth.signUp({
@@ -95,8 +103,10 @@ export const executeResetPassword = async (data: {
   const supabase = await createSupabaseServerClient();
   // Note: You'll need to configure the redirect URL in your Supabase project settings
   // or provide it dynamically if needed.
+  const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/account/update-password`;
+
   const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/update-password`, // Example redirect URL
+    redirectTo: redirectUrl,
   });
 
   if (error) {
@@ -109,47 +119,69 @@ export const executeResetPassword = async (data: {
 };
 
 export const executeUpdatePassword = async (data: {
+  currentPassword?: string;
   password: string;
-}): Promise<AuthResponseWithSession> => {
+}): Promise<AuthResponse> => {
   const supabase = await createSupabaseServerClient();
-  // This function updates the password for the currently logged-in user.
 
-  const { data: updateData, error: updateError } =
-    await supabase.auth.updateUser({
-      password: data.password,
+  if (data.currentPassword) {
+    // Get current user's email
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user?.email) {
+      const customError: AuthError = new Error(
+        "Unable to verify current password: user email not found",
+      );
+      customError.code = "user_not_found";
+      return { data: null, error: customError };
+    }
+
+    // Verify current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: userData.user.email,
+      password: data.currentPassword,
     });
+
+    if (signInError) {
+      const customError: AuthError = new Error("Current password is incorrect");
+      customError.code = "invalid_credentials";
+      return { data: null, error: customError };
+    }
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: data.password,
+  });
 
   if (updateError) {
     console.error("Supabase Update Password Error:", updateError.message);
     const customError: AuthError = new Error(updateError.message);
     customError.code = updateError.code;
-    return { data: { user: null, session: null }, error: customError };
+    return { data: null, error: customError };
   }
 
-  // After successful password update, fetch the current session to return
-  // consistent data structure, although updateUser itself only returns the user.
-  const { data: sessionData, error: sessionError } =
-    await supabase.auth.getSession();
+  return { data: null, error: null };
+};
 
-  if (sessionError) {
-    console.error(
-      "Supabase Get Session Error after update:",
-      sessionError.message,
-    );
-    // Decide how to handle this - maybe return success but without session?
-    // For now, let's return the error.
-    const customError: AuthError = new Error(sessionError.message);
-    customError.code = sessionError.code;
-    return { data: { user: null, session: null }, error: customError };
+// Add OAuth provider sign-in capability
+export const executeOAuthSignIn = async (
+  provider: "google" | "facebook" | "github",
+): Promise<{ data: string | null; error: AuthError | null }> => {
+  const supabase = await createSupabaseServerClient();
+  const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/dashboard`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: redirectUrl || "",
+    },
+  });
+
+  if (error) {
+    console.error(`Supabase ${provider} Sign In Error:`, error.message);
+    const customError: AuthError = new Error(error.message);
+    customError.code = error.code;
+    return { data: null, error: customError };
   }
 
-  // Ensure the data structure matches AuthSession
-  const responseData: AuthSession = {
-    // Use the user returned by updateUser, as getSession might not immediately reflect the change
-    // depending on Supabase internals, but the user object *is* updated.
-    user: updateData?.user ?? null,
-    session: sessionData?.session ?? null,
-  };
-
-  return { data: responseData, error: null };
+  return { data: data.url, error: null };
 };

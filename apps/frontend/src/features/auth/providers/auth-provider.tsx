@@ -7,6 +7,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import { AuthContext, type AuthContextType } from "../context/auth-context";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
@@ -20,6 +21,9 @@ import {
   executeSignIn,
   executeSignUp,
   executeSignOut,
+  executeResetPassword,
+  executeUpdatePassword,
+  executeOAuthSignIn,
 } from "../actions/auth-actions";
 
 interface AuthProviderProps {
@@ -31,6 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingState, setLoadingState] = useState<LoadingState>("idle");
+  const router = useRouter();
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -69,22 +74,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Define action wrappers
   const signIn = useCallback(
     async (data: AuthFormData): Promise<AuthResponseWithSession> => {
-      setLoadingState("loading");
-      const result = await executeSignIn(data);
-      setLoadingState(result.error ? "error" : "success");
-      return result;
+      setLoadingState("progress");
+      try {
+        const response = await executeSignIn(data);
+        setLoadingState(response.error ? "error" : "complete");
+        if (!response.error) {
+          router.push("/dashboard");
+        }
+        return response;
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [],
+    [router],
   );
 
   const signUp = useCallback(
     async (data: AuthFormData): Promise<AuthResponseWithSession> => {
-      setLoadingState("loading");
-      const result = await executeSignUp(data);
-      setLoadingState(result.error ? "error" : "success");
-      return result;
+      setLoadingState("progress");
+      try {
+        const response = await executeSignUp(data);
+        setLoadingState(response.error ? "error" : "complete");
+        if (!response.error) {
+          const verifyParams = new URLSearchParams({
+            email: encodeURIComponent(data.email),
+            type: "signup",
+          });
+          router.push(`/auth/verify-request?${verifyParams.toString()}`);
+        }
+        return response;
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [],
+    [router],
   );
 
   const signOut = useCallback(
@@ -92,16 +115,88 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       redirect?: boolean;
       destinationUrl?: string;
     }): Promise<AuthResponse> => {
-      setLoadingState("loading");
-      const result = await executeSignOut();
-      setLoadingState(result.error ? "error" : "success");
-      if (!result.error && options?.redirect) {
-        // Prefer server-side redirects or Next.js router for navigation
-        // Using window.location.href might not be ideal in Next.js
-        console.log(`Redirecting to ${options.destinationUrl || "/"}`);
-        // Consider using router.push(options.destinationUrl || "/"); if using useRouter
+      setLoadingState("progress");
+      try {
+        const result = await executeSignOut();
+        setLoadingState(result.error ? "error" : "complete");
+        if (!result.error && options?.redirect) {
+          router.push(options.destinationUrl || "/login");
+        }
+        return result;
+      } finally {
+        setIsLoading(false);
       }
-      return result;
+    },
+    [router],
+  );
+
+  const resetPassword = useCallback(
+    async ({ email }: { email: string }): Promise<AuthResponse> => {
+      setLoadingState("progress");
+      try {
+        const response = await executeResetPassword({ email });
+        setLoadingState(response.error ? "error" : "complete");
+        return response;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const updatePassword = useCallback(
+    async ({
+      currentPassword,
+      password,
+    }: {
+      currentPassword?: string;
+      password: string;
+    }): Promise<AuthResponse> => {
+      setLoadingState("progress");
+      try {
+        const response = await executeUpdatePassword({
+          currentPassword,
+          password,
+        });
+        setLoadingState(response.error ? "error" : "complete");
+        if (!response.error) {
+          router.push("/dashboard");
+        }
+        return response;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [router],
+  );
+
+  const signInWithProvider = useCallback(
+    async (
+      provider: "google" | "facebook" | "github",
+    ): Promise<{ data: string | null; error: Error | null }> => {
+      setLoadingState("progress");
+      try {
+        const response = await executeOAuthSignIn(provider);
+        setLoadingState(response.error ? "error" : "complete");
+
+        // If successful, we'll get back a URL to redirect to
+        if (!response.error && response.data) {
+          // For OAuth sign-in, we redirect the user to the provider's auth page
+          window.location.href = response.data;
+        }
+
+        return response;
+      } catch (error) {
+        console.error(`Failed to sign in with ${provider}:`, error);
+        setLoadingState("error");
+        const err =
+          error instanceof Error
+            ? error
+            : new Error(`Failed to sign in with ${provider}`);
+        return { data: null, error: err };
+      } finally {
+        setIsLoading(false);
+      }
     },
     [],
   );
@@ -109,15 +204,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = useMemo(
     () => ({
       user,
-      // session, // Consider if session object needs to be exposed
       isLoading,
       loadingState,
       isAuthenticated: !!user,
       signIn,
       signUp,
       signOut,
+      resetPassword,
+      updatePassword,
+      signInWithProvider,
     }),
-    [user, isLoading, loadingState, signIn, signUp, signOut],
+    [
+      user,
+      isLoading,
+      loadingState,
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updatePassword,
+      signInWithProvider,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -20,7 +20,14 @@ export interface AuthContextType {
     redirect?: boolean;
     destinationUrl?: string;
   }) => Promise<AuthResponse>;
-  // Add other methods like resetPassword, updatePassword as needed
+  resetPassword: (data: { email: string }) => Promise<AuthResponse>;
+  updatePassword: (data: {
+    currentPassword?: string;
+    password: string;
+  }) => Promise<AuthResponse>;
+  signInWithProvider: (
+    provider: "google" | "facebook" | "github",
+  ) => Promise<{ data: string | null; error: Error | null }>;
 }
 
 export const AuthContext = createContext<AuthContextType>(
@@ -32,6 +39,12 @@ export const AuthContext = createContext<AuthContextType>(
     signIn: () => Promise.reject(new Error("AuthContext not initialized")),
     signUp: () => Promise.reject(new Error("AuthContext not initialized")),
     signOut: () => Promise.reject(new Error("AuthContext not initialized")),
+    resetPassword: () =>
+      Promise.reject(new Error("AuthContext not initialized")),
+    updatePassword: () =>
+      Promise.reject(new Error("AuthContext not initialized")),
+    signInWithProvider: () =>
+      Promise.reject(new Error("AuthContext not initialized")),
     // Add default stubs for other methods
   } as AuthContextType, // Cast to satisfy TS
 );

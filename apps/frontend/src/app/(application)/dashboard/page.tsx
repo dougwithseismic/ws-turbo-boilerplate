@@ -2,6 +2,7 @@ import { protectedRoute } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { executeSignOut } from "@/features/auth/actions/auth-actions";
+import { PageHeader } from "@/features/layout/components/page-header";
 
 // Server component to display user info and a logout button
 export default async function DashboardPage() {
@@ -25,16 +26,22 @@ export default async function DashboardPage() {
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-      <p className="mb-2">Welcome, {profile?.full_name || user.email}!</p>
-      <p className="mb-4 text-sm text-muted-foreground">User ID: {user.id}</p>
+    <>
+      <PageHeader
+        items={[{ label: "Home" }, { label: "Dashboard", href: "/dashboard" }]}
+        title="Dashboard"
+      />
+      <div className="container p-4">
+        <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+        <p className="mb-2">Welcome, {profile?.full_name || user.email}!</p>
+        <p className="mb-4 text-sm text-muted-foreground">User ID: {user.id}</p>
 
-      <form action={handleSignOut}>
-        <Button type="submit" variant="outline">
-          Sign Out
-        </Button>
-      </form>
-    </div>
+        <form action={handleSignOut}>
+          <Button type="submit" variant="outline">
+            Sign Out
+          </Button>
+        </form>
+      </div>
+    </>
   );
 }

@@ -1,1 +1,1 @@
-export type LoadingState = "idle" | "loading" | "success" | "error";
+export type LoadingState = "idle" | "progress" | "complete" | "error";
