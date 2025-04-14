@@ -194,6 +194,18 @@ const setupSupabaseLocal = async () => {
     return;
   }
 
+  // Ensure dependencies are installed in the Supabase package directory
+  console.log(
+    chalk.blue(
+      `\nEnsuring dependencies are installed in ${supabasePackageDir}...`,
+    ),
+  );
+  runCommandWithFallback(
+    "pnpm install",
+    "Installing Supabase package dependencies",
+    supabasePackageDir,
+  );
+
   // Build Supabase package first before doing any operations
   runCommandWithFallback(
     "pnpm build",
@@ -231,24 +243,19 @@ const setupSupabaseLocal = async () => {
 
   // Start Supabase with all services
   console.log(chalk.blue("\nStarting Supabase with all services..."));
-  try {
-    execSync("npx supabase start", {
-      stdio: "inherit",
-      cwd: supabasePackageDir,
-    });
-    console.log(chalk.green("✓ Successfully started Supabase services."));
-  } catch (error) {
-    console.error(chalk.red("\n✗ Failed to start Supabase services:"), error);
-    console.log(
-      chalk.yellow(
-        "Try manually stopping Supabase services with 'npx supabase stop' and try again.",
-      ),
-    );
+  const startSuccessful = runCommandWithFallback(
+    "npx supabase start",
+    "Starting Supabase services",
+    supabasePackageDir,
+  );
+
+  if (!startSuccessful) {
     console.warn(
       chalk.yellow(
-        "\nContinuing with the rest of the setup despite Supabase start failure...",
+        "\nSkipping subsequent Supabase steps due to start failure.",
       ),
     );
+    return; // Don't try gen:keys or status if start failed
   }
 
   runCommandWithFallback(
