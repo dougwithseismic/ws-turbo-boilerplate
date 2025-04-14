@@ -41,6 +41,31 @@ function runCommand(command: string, description: string, cwd?: string): void {
 }
 
 /**
+ * Executes a shell command and streams the output, but doesn't exit on error.
+ * @param {string} command - The command to execute.
+ * @param {string} description - A description of the command being run.
+ * @param {string} [cwd] - Optional current working directory for the command.
+ * @returns {boolean} - Whether the command executed successfully.
+ */
+function runCommandWithFallback(
+  command: string,
+  description: string,
+  cwd?: string,
+): boolean {
+  console.log(chalk.blue(`\nRunning: ${description}...`));
+  console.log(chalk.cyan(`> ${command}`));
+  try {
+    execSync(command, { stdio: "inherit", cwd: cwd || process.cwd() });
+    console.log(chalk.green(`\n✓ ${description} completed successfully.`));
+    return true;
+  } catch (error) {
+    console.error(chalk.red(`\n✗ Error running ${description}:`));
+    console.error(chalk.yellow("Command failed, but continuing with setup."));
+    return false;
+  }
+}
+
+/**
  * Checks if Docker is running.
  * Exits the process with an error message if Docker is not responsive.
  */
@@ -169,16 +194,12 @@ const setupSupabaseLocal = async () => {
     return;
   }
 
-  // Always stop Supabase first
-  try {
-    console.log(chalk.blue("\nStopping any running Supabase services..."));
-    execSync("npx supabase stop", {
-      stdio: "inherit",
-      cwd: supabasePackageDir,
-    });
-  } catch (error) {
-    console.log(chalk.yellow("Note: No Supabase services were running."));
-  }
+  // Build Supabase package first before doing any operations
+  runCommandWithFallback(
+    "pnpm build",
+    "Building Supabase package",
+    supabasePackageDir,
+  );
 
   // Setup ports for Supabase
   console.log(chalk.blue("\nConfiguring ports for Supabase..."));
@@ -192,11 +213,21 @@ const setupSupabaseLocal = async () => {
     );
   }
 
-  runCommand(
-    "pnpm build", // Assuming build script exists in supabase package.json
-    "Building Supabase package",
-    supabasePackageDir,
-  );
+  // Try to stop Supabase - don't exit if it fails
+  console.log(chalk.blue("\nStopping any running Supabase services..."));
+  try {
+    execSync("npx supabase stop", {
+      stdio: "inherit",
+      cwd: supabasePackageDir,
+    });
+    console.log(chalk.green("✓ Successfully stopped Supabase services."));
+  } catch (stopError) {
+    console.log(
+      chalk.yellow(
+        "Note: Failed to stop Supabase services, but that's okay. Continuing...",
+      ),
+    );
+  }
 
   // Start Supabase with all services
   console.log(chalk.blue("\nStarting Supabase with all services..."));
@@ -205,6 +236,7 @@ const setupSupabaseLocal = async () => {
       stdio: "inherit",
       cwd: supabasePackageDir,
     });
+    console.log(chalk.green("✓ Successfully started Supabase services."));
   } catch (error) {
     console.error(chalk.red("\n✗ Failed to start Supabase services:"), error);
     console.log(
@@ -212,17 +244,21 @@ const setupSupabaseLocal = async () => {
         "Try manually stopping Supabase services with 'npx supabase stop' and try again.",
       ),
     );
-    throw error;
+    console.warn(
+      chalk.yellow(
+        "\nContinuing with the rest of the setup despite Supabase start failure...",
+      ),
+    );
   }
 
-  runCommand(
-    "pnpm run supabase:gen:keys", // Assuming this script exists
+  runCommandWithFallback(
+    "pnpm run supabase:gen:keys",
     "Generating Supabase keys",
     supabasePackageDir,
   );
 
-  runCommand(
-    "npx supabase status", // Run supabase CLI via npx
+  runCommandWithFallback(
+    "npx supabase status",
     "Checking Supabase status",
     supabasePackageDir,
   );
