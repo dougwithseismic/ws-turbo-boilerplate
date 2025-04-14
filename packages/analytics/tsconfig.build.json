@@ -3,7 +3,8 @@
   "compilerOptions": {
     "noEmit": false,
     "moduleResolution": "node",
-    "types": ["node"]
+    "types": ["node"],
+    "lib": ["ES2020", "DOM"]
   },
   "exclude": [
     "node_modules",

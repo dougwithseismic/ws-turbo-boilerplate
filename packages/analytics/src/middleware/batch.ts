@@ -1,10 +1,32 @@
 import type { PluginMethodData } from "../core/analytics";
 
+// Add browser types
+declare global {
+  interface Window {
+    addEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ): void;
+    removeEventListener(
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | EventListenerOptions,
+    ): void;
+  }
+}
+
 export interface BatchOptions {
   maxSize?: number;
   maxWait?: number;
   flushOnUnload?: boolean;
   maxRetries?: number;
+  /** Force a specific environment */
+  environment?: {
+    isServer?: boolean;
+    isClient?: boolean;
+    isTest?: boolean;
+  };
 }
 
 type BatchItem<M extends keyof PluginMethodData = keyof PluginMethodData> = {
@@ -14,6 +36,30 @@ type BatchItem<M extends keyof PluginMethodData = keyof PluginMethodData> = {
 };
 
 const OFFLINE_QUEUE_KEY = "analytics_queue";
+
+/**
+ * Detects the current environment
+ */
+function detectEnvironment(config?: BatchOptions["environment"]) {
+  if (config) {
+    return {
+      isServer: config.isServer ?? false,
+      isClient: config.isClient ?? false,
+      isTest: config.isTest ?? false,
+    };
+  }
+
+  // Default environment detection
+  const isTest = process.env.NODE_ENV === "test";
+  const isClient = !isTest && typeof window !== "undefined";
+  const isServer = !isTest && !isClient;
+
+  return {
+    isServer,
+    isClient,
+    isTest,
+  };
+}
 
 export class BatchMiddleware {
   name = "batch";
@@ -28,30 +74,33 @@ export class BatchMiddleware {
   private retryTimeoutIds: ReturnType<typeof setTimeout>[] = [];
   private isProcessingOfflineEvents = false;
   private hasReconnected = false;
+  private env: ReturnType<typeof detectEnvironment>;
 
   constructor(options: BatchOptions = {}) {
     this.maxSize = options.maxSize ?? 10;
     this.maxWait = options.maxWait ?? 5000;
     this.flushOnUnload = options.flushOnUnload ?? true;
     this.maxRetries = options.maxRetries ?? 3;
+    this.env = detectEnvironment(options.environment);
 
-    // Initialize offline queue if it doesn't exist
-    if (
-      typeof window !== "undefined" &&
-      !localStorage.getItem(OFFLINE_QUEUE_KEY)
-    ) {
-      localStorage.setItem(OFFLINE_QUEUE_KEY, "[]");
-    }
+    // Skip browser-specific setup on server
+    if (this.env.isClient) {
+      // Initialize offline queue if it doesn't exist
+      if (!localStorage.getItem(OFFLINE_QUEUE_KEY)) {
+        localStorage.setItem(OFFLINE_QUEUE_KEY, "[]");
+      }
 
-    if (this.flushOnUnload && typeof window !== "undefined") {
-      window.addEventListener("beforeunload", async (event) => {
-        event.preventDefault();
-        await this.flush();
-        event.returnValue = "";
-      });
-    }
+      if (this.flushOnUnload) {
+        window.addEventListener(
+          "beforeunload",
+          async (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            await this.flush();
+            event.returnValue = "";
+          },
+        );
+      }
 
-    if (typeof window !== "undefined") {
       window.addEventListener("online", () => {
         this.hasReconnected = true;
       });
@@ -59,12 +108,15 @@ export class BatchMiddleware {
   }
 
   private isOnline(): boolean {
-    return typeof navigator !== "undefined" ? navigator.onLine : true;
+    return this.env.isServer ? true : navigator.onLine;
   }
 
   private storeOffline<M extends keyof PluginMethodData>(
     item: BatchItem<M>,
   ): void {
+    // Skip on server
+    if (this.env.isServer) return;
+
     const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || "[]");
     queue.push(item);
     localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
@@ -73,6 +125,9 @@ export class BatchMiddleware {
   private async processOfflineEvents<M extends keyof PluginMethodData>(
     next: (data: PluginMethodData[M]) => Promise<void>,
   ): Promise<void> {
+    // Skip on server
+    if (this.env.isServer) return;
+
     if (this.isProcessingOfflineEvents || !this.isOnline()) {
       return;
     }
@@ -117,6 +172,11 @@ export class BatchMiddleware {
     next: (data: PluginMethodData[M]) => Promise<void>,
   ): Promise<void> {
     const item: BatchItem<M> = { type: method, data };
+
+    // On server, just pass through to next
+    if (this.env.isServer) {
+      return next(data);
+    }
 
     if (!this.isOnline()) {
       this.storeOffline(item);
@@ -201,6 +261,11 @@ export class BatchMiddleware {
   }
 
   private async flush(): Promise<void> {
+    // Skip on server
+    if (this.env.isServer) {
+      return Promise.resolve();
+    }
+
     if (this.isFlushInProgress) {
       return this.flushPromise ?? Promise.resolve();
     }

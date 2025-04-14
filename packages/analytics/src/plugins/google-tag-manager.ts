@@ -23,6 +23,7 @@ export class GoogleTagManagerPlugin implements Plugin {
   private dataLayerName: string;
   private initialized = false;
   private dataLayer: DataLayer;
+  private isClient = typeof window !== "undefined";
 
   constructor({
     containerId,
@@ -39,10 +40,9 @@ export class GoogleTagManagerPlugin implements Plugin {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    if (typeof window === "undefined") {
-      throw new Error(
-        "Google Tag Manager can only be initialized in a browser environment",
-      );
+    // Skip initialization on server-side
+    if (!this.isClient) {
+      return;
     }
 
     // Initialize dataLayer array if it doesn't exist
@@ -64,9 +64,10 @@ export class GoogleTagManagerPlugin implements Plugin {
       this.initialized = true;
     } catch (error) {
       this.initialized = false;
-      throw new Error(
+      console.error(
         `Failed to load Google Tag Manager script: ${error instanceof Error ? error.message : String(error)}`,
       );
+      return;
     }
 
     // Push the GTM container ID to the dataLayer
@@ -77,11 +78,16 @@ export class GoogleTagManagerPlugin implements Plugin {
   }
 
   private push(data: DataLayerObject): void {
-    if (typeof window === "undefined") return;
+    // Skip operations on server-side
+    if (!this.isClient) return;
+
     this.dataLayer.push(data);
   }
 
   async track<T extends EventName>(event: AnalyticsEvent<T>): Promise<void> {
+    // Skip operations on server-side
+    if (!this.isClient) return;
+
     this.push({
       event: event.name,
       ...event.properties,
@@ -90,6 +96,9 @@ export class GoogleTagManagerPlugin implements Plugin {
   }
 
   async page(pageView: PageView): Promise<void> {
+    // Skip operations on server-side
+    if (!this.isClient) return;
+
     this.push({
       event: "page_view",
       page_path: pageView.path,
@@ -101,6 +110,9 @@ export class GoogleTagManagerPlugin implements Plugin {
   }
 
   async identify(identity: Identity): Promise<void> {
+    // Skip operations on server-side
+    if (!this.isClient) return;
+
     this.push({
       event: "identify",
       user_id: identity.userId,
@@ -110,6 +122,9 @@ export class GoogleTagManagerPlugin implements Plugin {
   }
 
   loaded(): boolean {
+    // On server-side, report as not loaded
+    if (!this.isClient) return false;
+
     return this.initialized;
   }
 }

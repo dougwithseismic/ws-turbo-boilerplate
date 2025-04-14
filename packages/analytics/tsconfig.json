@@ -1,5 +1,5 @@
 {
-  "extends": "@zer0/config-typescript/base.json",
+  "extends": "@zer0/typescript-config/base",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -7,9 +7,10 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
+    "types": ["vitest/globals", "node"],
     "moduleResolution": "bundler",
-    "noEmit": true
+    "noEmit": true,
+    "lib": ["ES2020", "DOM"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
