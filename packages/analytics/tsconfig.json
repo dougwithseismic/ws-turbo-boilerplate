@@ -1,0 +1,16 @@
+{
+  "extends": "@zer0/config-typescript/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
+    "moduleResolution": "bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,4 +1,4 @@
-# @repo/scripts
+# @zer0/scripts
 
 This package contains setup and maintenance scripts for the Sniffle SDK monorepo.
 
@@ -9,7 +9,7 @@ This package contains setup and maintenance scripts for the Sniffle SDK monorepo
 A utility for renaming package scopes throughout the monorepo. This is typically used during initial setup to change from the template's `@repo` scope to your project's scope.
 
 ```typescript
-import { renamePackages, clearApps } from "@repo/scripts/rename-packages";
+import { renamePackages, clearApps } from "@zer0/scripts/rename-packages";
 
 // Clear the docs app if it exists
 await clearApps();
