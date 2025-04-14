@@ -43,7 +43,7 @@
     "supabase:gen:types": "npx supabase gen types typescript --local > ./src/types/database.types.ts && prettier --write ./src/types/database.types.ts",
     "supabase:link": "npx supabase link",
     "supabase:login": "npx supabase login",
-    "supabase:start": "npx supabase start -x studio,imgproxy,edge-runtime",
+    "supabase:start": "npx supabase start",
     "supabase:stop": "npx supabase stop",
     "supabase:studio": "npx supabase studio",
     "typecheck": "tsc --noEmit"

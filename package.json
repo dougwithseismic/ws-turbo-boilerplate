@@ -10,12 +10,17 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "setup:project": "tsx packages/scripts/src/setup.ts",
-    "setup:railway": "tsx packages/scripts/src/setup.ts --only railway",
-    "railway:sync-env": "tsx packages/scripts/src/setup.ts --only railway-env",
     "prepare": "husky",
     "template:fetch": "git fetch template",
     "template:merge": "git merge template/main --allow-unrelated-histories",
-    "template:update": "pnpm template:fetch && pnpm template:merge"
+    "template:update": "pnpm template:fetch && pnpm template:merge",
+    "supabase:start": "pnpm --filter @zer0/supabase supabase:start",
+    "supabase:stop": "pnpm --filter @zer0/supabase supabase:stop",
+    "supabase:status": "pnpm --filter @zer0/supabase supabase:status",
+    "supabase:db:reset": "pnpm --filter @zer0/supabase supabase:db:reset",
+    "supabase:db:push": "pnpm --filter @zer0/supabase supabase:db:push",
+    "supabase:db:migrate": "pnpm --filter @zer0/supabase supabase:db:migrate",
+    "supabase:db:rollback": "pnpm --filter @zer0/supabase supabase:db:rollback"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -25,7 +30,6 @@
     "turbo": "^2.5.0",
     "typescript": "5.8.3"
   },
-  "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18"
   },
@@ -46,5 +50,6 @@
     "@types/node": "^22.14.0",
     "chalk": "^5.4.1",
     "yargs": "^17.7.2"
-  }
+  },
+  "packageManager": "pnpm@10.6.4+sha512.da3d715bfd22a9a105e6e8088cfc7826699332ded60c423b14ec613a185f1602206702ff0fe4c438cb15c979081ce4cb02568e364b15174503a63c7a8e2a5f6c"
 }

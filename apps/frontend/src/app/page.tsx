@@ -1,9 +1,8 @@
 "use client"; // Need client component for useAuth
 
-import Link from "next/link";
-import { useAuth } from "@/features/auth/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import ContentSection from "@/components/content-1";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import Link from "next/link";
 
 export default function Home() {
   const { isAuthenticated, isLoading, signOut } = useAuth();
@@ -37,8 +36,6 @@ export default function Home() {
           )}
         </div>
       </div>
-
-      <ContentSection />
     </div>
   );
 }

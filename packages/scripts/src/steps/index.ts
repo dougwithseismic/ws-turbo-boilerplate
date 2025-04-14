@@ -1,4 +1,4 @@
 // export { setupEnvFiles } from "./setup-env";
-export { decryptEnvFiles } from "./decrypt-env";
+export { cloneEnvFiles } from "./clone-env";
 export { renamePackages } from "./rename-packages";
-export { setupRailway, syncRailwayEnv } from "./setup-railway";
+export { setupPorts } from "./setup-ports";

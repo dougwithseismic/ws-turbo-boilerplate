@@ -11,15 +11,12 @@ export type SetupStep = {
 };
 
 export type SetupStepValue =
+  | "clone-env"
   | "rename-packages"
-  | "decrypt-env"
-  | "setup-railway"
+  | "setup-ports"
   | "setup-supabase-local";
 
-export type SetupOptions = {
-  only?: "railway" | "railway-env";
-  secret?: string;
-};
+export type SetupOptions = {};
 
 export const validateScope = (scope: string): boolean => {
   // Scope must start with @ and contain only alphanumeric characters, hyphens, and underscores

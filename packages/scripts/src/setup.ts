@@ -1,9 +1,4 @@
-import {
-  renamePackages,
-  decryptEnvFiles,
-  setupRailway,
-  syncRailwayEnv,
-} from "./steps";
+import { cloneEnvFiles, renamePackages, setupPorts } from "./steps";
 import {
   validateScope,
   type RenameConfig,
@@ -76,23 +71,23 @@ const program = new Command();
 
 const setupSteps: SetupStep[] = [
   {
+    name: "Clone environment files",
+    value: "clone-env",
+    checked: true,
+    description:
+      "Clones .env.example files to .env in apps/* if they don't exist",
+  },
+  {
     name: "Rename packages",
     value: "rename-packages",
     checked: true,
     description: "Updates all package names and imports to use your scope",
   },
   {
-    name: "Decrypt environment files",
-    value: "decrypt-env",
+    name: "Setup Supabase ports",
+    value: "setup-ports",
     checked: true,
-    description:
-      "Decrypts .env.encrypted files to .env in apps/* if they don't exist",
-  },
-  {
-    name: "Setup Railway",
-    value: "setup-railway",
-    checked: false,
-    description: "Initialize or link Railway project and set up databases",
+    description: "Finds free ports and updates Supabase config",
   },
   {
     name: "Setup Supabase (Local)",
@@ -174,17 +169,51 @@ const setupSupabaseLocal = async () => {
     return;
   }
 
+  // Always stop Supabase first
+  try {
+    console.log(chalk.blue("\nStopping any running Supabase services..."));
+    execSync("npx supabase stop", {
+      stdio: "inherit",
+      cwd: supabasePackageDir,
+    });
+  } catch (error) {
+    console.log(chalk.yellow("Note: No Supabase services were running."));
+  }
+
+  // Setup ports for Supabase
+  console.log(chalk.blue("\nConfiguring ports for Supabase..."));
+  try {
+    await setupPorts();
+  } catch (error) {
+    console.warn(
+      chalk.yellow(
+        "\n⚠️ Could not set up ports for Supabase. Will use default ports instead.",
+      ),
+    );
+  }
+
   runCommand(
     "pnpm build", // Assuming build script exists in supabase package.json
     "Building Supabase package",
     supabasePackageDir,
   );
 
-  runCommand(
-    "pnpm run supabase:start", // Start Supabase service
-    "Starting Supabase service",
-    supabasePackageDir,
-  );
+  // Start Supabase with all services
+  console.log(chalk.blue("\nStarting Supabase with all services..."));
+  try {
+    execSync("npx supabase start", {
+      stdio: "inherit",
+      cwd: supabasePackageDir,
+    });
+  } catch (error) {
+    console.error(chalk.red("\n✗ Failed to start Supabase services:"), error);
+    console.log(
+      chalk.yellow(
+        "Try manually stopping Supabase services with 'npx supabase stop' and try again.",
+      ),
+    );
+    throw error;
+  }
 
   runCommand(
     "pnpm run supabase:gen:keys", // Assuming this script exists
@@ -198,6 +227,19 @@ const setupSupabaseLocal = async () => {
     supabasePackageDir,
   );
 
+  // Update environment variables in all apps to match the Supabase setup
+  console.log(chalk.blue("\nUpdating environment variables in apps..."));
+  try {
+    // Reuse the cloneEnvFiles functionality which now also updates environment variables
+    await cloneEnvFiles();
+  } catch (error) {
+    console.warn(
+      chalk.yellow(
+        "\n⚠️ Could not update environment variables. You may need to manually update your .env files with the correct Supabase URL and ports.",
+      ),
+    );
+  }
+
   console.log(
     chalk.green("\n✅ Supabase local setup steps completed successfully!"),
   );
@@ -206,10 +248,12 @@ const setupSupabaseLocal = async () => {
 const executeSteps = async (
   selectedSteps: string[],
   config: RenameConfig | null,
-  secret?: string,
 ): Promise<void> => {
   for (const step of selectedSteps) {
     switch (step) {
+      case "clone-env":
+        await cloneEnvFiles();
+        break;
       case "rename-packages":
         if (config) {
           await renamePackages(config);
@@ -227,16 +271,8 @@ const executeSteps = async (
           }
         }
         break;
-      case "decrypt-env":
-        if (!secret) {
-          throw new Error(
-            "Decryption step selected, but no --secret was provided.",
-          );
-        }
-        await decryptEnvFiles(secret);
-        break;
-      case "setup-railway":
-        await setupRailway();
+      case "setup-ports":
+        await setupPorts();
         break;
       case "setup-supabase-local":
         await setupSupabaseLocal();
@@ -248,30 +284,6 @@ const executeSteps = async (
 export const setupProject = async (
   options: SetupOptions = {},
 ): Promise<void> => {
-  if (options.only === "railway-env") {
-    try {
-      await syncRailwayEnv();
-      console.log(
-        chalk.green("\n✨ Railway environment sync completed successfully!\n"),
-      );
-    } catch (error) {
-      console.error(chalk.red("\n❌ Railway environment sync failed:"), error);
-      process.exit(1);
-    }
-    return;
-  }
-
-  if (options.only === "railway") {
-    try {
-      await setupRailway();
-      console.log(chalk.green("\n✨ Railway setup completed successfully!\n"));
-    } catch (error) {
-      console.error(chalk.red("\n❌ Railway setup failed:"), error);
-      process.exit(1);
-    }
-    return;
-  }
-
   showBanner();
 
   try {
@@ -288,8 +300,6 @@ export const setupProject = async (
           value: step.value,
           checked: step.checked,
         })),
-        // Ensure at least one step is selected if needed, or handle empty selection later
-        // validate: (input) => input.length > 0 ? true : "Please select at least one step.",
       },
     ]);
 
@@ -303,35 +313,8 @@ export const setupProject = async (
       config = await promptForScope();
     }
 
-    // --- Prompt for secret only if decrypt step is selected and secret not provided --- START
-    let finalSecret = options.secret; // Use CLI secret if provided
-    if (steps.includes("decrypt-env") && !finalSecret) {
-      console.log(
-        chalk.yellow(
-          "\n🔒 The 'Decrypt environment files' step requires a secret key.",
-        ),
-      );
-      const { secret } = await inquirer.prompt([
-        {
-          type: "password",
-          name: "secret",
-          message: "Enter the secret key to decrypt environment files:",
-          mask: "*",
-          validate: (input: string) => {
-            if (!input) {
-              return "Secret key cannot be empty.";
-            }
-            return true;
-          },
-        },
-      ]);
-      finalSecret = secret; // Use prompted secret
-    }
-    // --- Prompt for secret only if decrypt step is selected and secret not provided --- END
-
     console.log(chalk.blue("\n📦 Executing selected steps...\n"));
-    // Pass the final secret (CLI option takes precedence over prompt)
-    await executeSteps(steps, config, finalSecret);
+    await executeSteps(steps, config);
     console.log(chalk.green("\n✨ Project setup completed successfully!\n"));
   } catch (error) {
     console.error(chalk.red("\n❌ Project setup failed:"), error);
@@ -343,14 +326,6 @@ program
   .name("setup-project")
   .description("Interactive setup for the SDK project")
   .version("0.0.0")
-  .option(
-    "--only <step>",
-    "Run only a specific setup step (railway or railway-env)",
-  )
-  .option(
-    "-s, --secret <key>",
-    "The secret key for decrypting .env.encrypted files",
-  )
   .action((options) => setupProject(options));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
