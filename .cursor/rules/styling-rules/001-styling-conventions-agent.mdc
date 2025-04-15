@@ -1,0 +1,135 @@
+# Styling Conventions
+
+## Critical Rules
+
+- **Framework**: Tailwind CSS MUST be used for styling.
+- **Base Styles & Variables**: Define global styles, CSS variables (for theming), and `@tailwind` directives in `src/styles/globals.css`.
+    - Define light and dark theme variables using `:root` and `.dark` selectors.
+- **Class Name Composition**: ALWAYS use the `cn` utility function (imported from `@/utils/cn.ts`, which combines `clsx` and `tailwind-merge`) to construct component class names, especially when conditional classes or merging props are involved.
+- **Font Definition**: Define application fonts using `next/font/google` (or equivalent `next/font` loader) in a dedicated file (e.g., `src/styles/fonts.ts`).
+    - Export font instances (e.g., `sans`, `heading`).
+    - Export font CSS variables (e.g., `--font-sans`).
+- **Font Application**: Apply fonts globally by adding their CSS variable classes to the root layout (`<html>` or `<body>`), typically using a utility function like `getFontsClassName` that incorporates the `cn` utility.
+
+## Examples
+
+<example>
+  ```css
+  /* src/styles/globals.css */
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  @layer base {
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      /* ... other light theme variables ... */
+      --radius: 0.5rem;
+    }
+
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      /* ... other dark theme variables ... */
+    }
+    
+    body {
+      @apply bg-background text-foreground;
+    }
+  }
+  ```
+
+  ```typescript
+  // src/utils/cn.ts
+  import { type ClassValue, clsx } from 'clsx';
+  import { twMerge } from 'tailwind-merge';
+
+  export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+  }
+
+  // src/styles/fonts.ts (Example)
+  import { Inter as SansFont } from 'next/font/google';
+  import { cn } from '@/utils/cn';
+
+  const sans = SansFont({
+    subsets: ['latin'],
+    variable: '--font-sans',
+    // ... other options
+  });
+
+  const heading = sans; // Example: using same font for heading
+
+  export { sans, heading };
+
+  export function getFontsClassName(theme?: string) {
+    const dark = theme === 'dark';
+    const light = !dark;
+    const fontVariables = [sans.variable, heading.variable]; // Collect variables
+  
+    return cn(
+      'bg-background min-h-screen antialiased', 
+      ...fontVariables, 
+      { dark, light }
+    );
+  }
+
+  // src/app/layout.tsx (Applying fonts and classes)
+  import { getFontsClassName, sans, heading } from '@/styles/fonts';
+
+  const RootLayout = ({ children }) => {
+    // Assuming theme detection logic exists
+    const theme = 'light'; 
+    return (
+      <html lang="en" className={getFontsClassName(theme)}>
+        <body>{children}</body>
+      </html>
+    );
+  }
+
+  // src/components/ui/button/button.tsx (Using cn)
+  import { cn } from '@/utils/cn';
+  import { cva } from 'class-variance-authority';
+
+  const buttonVariants = cva(/* ... base classes ... */, { variants: { /* ... */ } });
+
+  const Button = React.forwardRef(
+    ({ className, variant, size, ...props }, ref) => {
+      return (
+        <button 
+          className={cn(buttonVariants({ variant, size, className }))} // Correct use of cn
+          ref={ref} 
+          {...props} 
+        />
+      );
+    }
+  );
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Not using cn utility
+  // src/components/some-component.tsx
+  const SomeComponent = ({ isActive, className }) => {
+    const classes = `base-class ${isActive ? 'active-class' : ''} ${className}`;
+    return <div className={classes}>...</div>; // Incorrect: Prone to merge issues, harder to read
+  }
+
+  // Invalid: Defining fonts directly in layout without variables
+  // src/app/layout.tsx
+  import { Inter } from 'next/font/google';
+  const inter = Inter({ subsets: ['latin'] });
+  const RootLayout = ({ children }) => {
+    return <html lang="en" className={inter.className}>...</html>; // Incorrect: Doesn't use CSS variables, harder to manage multiple fonts
+  }
+
+  // Invalid: Accessing theme variables directly without CSS variables
+  // src/components/card.tsx
+  const Card = () => {
+    const styles = { backgroundColor: '#ffffff' }; // Incorrect: Should use Tailwind classes like bg-card or CSS var(--card-background)
+    return <div style={styles}>...</div>;
+  }
+  ```
+</example> 

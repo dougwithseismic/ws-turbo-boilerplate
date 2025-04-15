@@ -1,0 +1,175 @@
+# Frontend Feature Development Standards
+
+## Critical Rules
+
+- **Framework**: Utilize Next.js 15 features and conventions.
+- **Data Fetching**: Use React Query (`@tanstack/react-query`) for server state management (fetching, caching, updating asynchronous data).
+- **State Management**: Use Zustand for client-side state management. Place stores within the relevant feature folder under `store/`.
+- **Next.js Page Structure (`src/app/**/page.tsx`)**:
+    - **Server Pages**: These files are Server Components by default.
+    - **Metadata**: MUST export a `metadata` object for optimal SEO. Populate it with relevant title, description, keywords, etc.
+    - **Data Prefetching**: Use `queryClient.prefetchQuery` within the Server Component to fetch initial data.
+    - **Hydration**: Wrap the primary client component in `<HydrationBoundary state={dehydrate(queryClient)}>`. Pass prefetched data as props (`initialData`) to the client component to avoid loading flashes.
+    - **Client Component Wrapper**: Import and render the main client-side UI component (often from `src/features/{feature-name}/page/page.client.tsx`).
+- **Feature Folder Structure**: Organize features under `src/features/{feature-name}/`. Each feature should contain subdirectories as needed:
+    - `page/`: Contains the primary client-side component (`page.client.tsx`) for a feature associated with a route. This component will be wrapped by the Server `page.tsx` and `HydrationBoundary`. Mark with `"use client"`.
+    - `components/`: Feature-specific React components (can be Server or Client Components). Client Components here should be marked `"use client"`.
+    - `hooks/`: Feature-specific hooks (including React Query hooks). Often marked `"use client"`.
+    - `store/`: Zustand store related to the feature. Mark with `"use client"`.
+    - `context/`: React context specific to the feature (use sparingly, prefer Zustand).
+    - `lib/` or `utils/`: Feature-specific utilities or library code (can be Server or Client).
+    - `actions/`: Server Actions specific to the feature.
+- **Supabase Client Usage**:
+    - Client Components (`"use client"`): Import and use `supabaseClient` from `src/lib/supabase/client.ts`.
+    - Server Components / Server Actions / Route Handlers: Use `createSupabaseServerClient` from `src/lib/supabase/server.ts`.
+    - Middleware (`src/middleware.ts`): Handles session management and auth redirects.
+- **Type Safety Fallback**: If significantly blocked by complex TypeScript types, use `any` temporarily but MUST include a specific TODO comment: `// TODO: [Your Name/Date] Refine type - [Brief reason why 'any' was used]`. After using the fallback, explicitly ask the user to test the related functionality.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/app/dashboard/page.tsx (Server Page)
+  import {
+    dehydrate,
+    HydrationBoundary,
+    QueryClient,
+  } from "@tanstack/react-query";
+  import { fetchDashboardData } from "@/features/dashboard/actions/data.actions";
+  import { DashboardClientPage } from "@/features/dashboard/page/page.client";
+  import { protectedRoute } from "@/lib/auth";
+  import type { Metadata } from 'next';
+
+  export const metadata: Metadata = {
+    title: 'User Dashboard - My App',
+    description: 'View your account overview and recent activity.',
+  };
+
+  export default async function DashboardPage() {
+    await protectedRoute(); // Ensure user is authenticated
+    const queryClient = new QueryClient();
+
+    try {
+      await queryClient.prefetchQuery({
+        queryKey: ["dashboardData"],
+        queryFn: fetchDashboardData, // Assume this is a Server Action or server-safe function
+      });
+    } catch (error) {
+      console.error("Failed to prefetch dashboard data:", error);
+      // Handle error state
+      return <div>Error loading dashboard.</div>;
+    }
+
+    return (
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <DashboardClientPage /> 
+      </HydrationBoundary>
+    );
+  }
+
+  // src/features/dashboard/page/page.client.tsx (Client Page Component)
+  "use client";
+
+  import { useQuery } from "@tanstack/react-query";
+  import { fetchDashboardData } from "@/features/dashboard/actions/data.actions";
+  import { useDashboardStore } from "@/features/dashboard/store/dashboard.store";
+  import { DashboardWidget } from "@/features/dashboard/components/dashboard-widget";
+
+  export function DashboardClientPage() {
+    // Use the prefetched data, will re-fetch on client if stale/needed
+    const { data, isLoading, error } = useQuery({
+      queryKey: ["dashboardData"],
+      queryFn: fetchDashboardData,
+      // initialData can be passed from server if needed, but prefetching handles it
+    });
+    const customLayout = useDashboardStore((state) => state.customLayout);
+
+    if (isLoading) return <div>Loading dashboard...</div>;
+    if (error) return <div>Error loading data.</div>;
+
+    return (
+      <div>
+        <h1>Your Dashboard</h1>
+        <p>Layout: {customLayout}</p>
+        {/* Render components using data */}
+        <DashboardWidget data={data?.widgetData} /> 
+      </div>
+    );
+  }
+
+  // src/features/dashboard/store/dashboard.store.ts (Client Store)
+  "use client";
+  import { create } from 'zustand';
+
+  interface DashboardState {
+    customLayout: string;
+    setLayout: (layout: string) => void;
+  }
+
+  export const useDashboardStore = create<DashboardState>((set) => ({
+    customLayout: 'grid',
+    setLayout: (layout) => set({ customLayout: layout }),
+  }));
+  
+  // src/features/dashboard/actions/data.actions.ts (Server Action)
+  "use server";
+  import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+  export const fetchDashboardData = async () => {
+      const supabase = await createSupabaseServerClient();
+      // ... fetch data using supabase ...
+      const data = { widgetData: { value: 123 } }; // Example data
+      if (Math.random() < 0.1) throw new Error("Random fetch error"); // Simulate potential error
+      return data;
+  };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Missing metadata export in src/app/settings/page.tsx
+  // export default function SettingsPage() { ... }
+
+  // Invalid: Not using HydrationBoundary in src/app/profile/page.tsx
+  // export default async function ProfilePage() { 
+  //   const data = await fetchProfileData(); 
+  //   return <ProfileClient data={data} />; // Missing prefetch and hydration
+  // }
+
+  // Invalid: Defining client logic directly in src/app/**/page.tsx instead of separate .client.tsx
+  // src/app/orders/page.tsx
+  // "use client"; // Incorrectly making the server page a client component
+  // import { useState } from 'react'; 
+  // export default function OrdersPage() { const [filter, setFilter] = useState(''); ... }
+
+  // Invalid: Using useState for complex cross-component state instead of Zustand
+  // src/features/some-feature/components/component-a.tsx
+  import { useState } from 'react';
+  // ... lots of useState and prop drilling ...
+
+  // Invalid: Fetching data directly in a client component without React Query
+  // src/features/some-feature/components/component-b.tsx
+  "use client";
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch('/api/data'); // No caching, manual loading state, etc.
+      // ...
+    };
+    fetchData();
+  }, []);
+
+  // Invalid: Incorrect Supabase client usage
+  // src/app/api/some-route.ts
+  import { supabaseClient } from '@/lib/supabase/client'; // ERROR: Used client client on server
+
+  // Invalid: Vague TODO comment
+  // src/features/another-feature/utils/helpers.ts
+  const processItem = (item: any) => { // TODO: Fix this type later
+    // ...
+  }
+
+  // Invalid: Missing feature folder structure
+  // src/components/user-avatar.tsx (Should be in src/features/user-profile/components/user-avatar.tsx)
+  // src/hooks/use-auth.ts (Should be in src/features/auth/hooks/use-auth.ts)
+  ```
+</example> 

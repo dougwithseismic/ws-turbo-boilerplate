@@ -1,0 +1,121 @@
+# Testing Structure & Practices
+
+## Critical Rules
+
+- **Test Colocation**: Unit and integration tests MUST be colocated with the source code they are testing using a `__tests__` subdirectory.
+    - Component tests: `src/{components|features/*}/components/__tests__/{component-name}.test.tsx`
+    - Hook tests: `src/hooks/__tests__/{hook-name}.test.ts`
+    - Route tests: `src/app/{route-path}/__tests__/{page-or-segment}.test.tsx`
+    - Library tests: `src/lib/__tests__/{module-name}.test.ts`
+- **Global Testing Utilities**: Place global test setup, custom render functions (like `renderApp`), and test helpers in `src/testing/`.
+    - Test setup file: `src/testing/setup-tests.ts` (for Vitest/Jest global setup).
+    - Test utilities/renderers: `src/testing/test-utils.tsx`.
+- **Data Generation**: Use `src/testing/data-generators.ts` to create factory functions (e.g., `createUser`, `createDiscussion`) for generating consistent mock data structures.
+- **API Mocking**: Utilize Mock Service Worker (MSW) for mocking API endpoints during tests.
+    - Configure MSW in `src/testing/mocks/`.
+    - Define handlers per resource in `src/testing/mocks/handlers/` (e.g., `auth.ts`, `discussions.ts`).
+    - Use `src/testing/mocks/db.ts` for an in-memory mock database if needed.
+    - Use `src/testing/mocks/server.ts` for node environments (Vitest/Jest) and `src/testing/mocks/browser.ts` if needed for browser-based test runners or Storybook.
+- **Testing Libraries**: Use `@testing-library/react` for rendering components and interacting with the DOM, and `@testing-library/user-event` for simulating user interactions.
+- **Test Runner**: Use Vitest (preferred) or Jest as the test runner.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/features/discussions/components/__tests__/discussion.test.tsx
+  import { useParams } from 'next/navigation';
+  import {
+    renderApp, // Custom render function from test-utils
+    screen,
+    userEvent,
+    waitFor,
+    createDiscussion, // From data-generators
+    createUser, // From data-generators
+    within,
+    waitForLoadingToFinish, // Custom helper from test-utils
+  } from '@/testing/test-utils';
+  import { Discussion } from '../_components/discussion';
+  
+  // Mocking dependencies (e.g., next/navigation)
+  vi.mock('next/navigation', /* ... */);
+
+  test('should render discussion', async () => {
+    const fakeUser = await createUser(); // Using data generator
+    const fakeDiscussion = await createDiscussion({ teamId: fakeUser.teamId });
+    vi.mocked(useParams).mockReturnValue({ discussionId: fakeDiscussion.id });
+
+    await renderApp(<Discussion discussionId={fakeDiscussion.id} />, { user: fakeUser }); // Using custom render
+    await waitForLoadingToFinish(); // Using custom helper
+
+    expect(screen.getByText(fakeDiscussion.body)).toBeInTheDocument();
+  });
+
+  // src/testing/data-generators.ts
+  import { randCatchPhrase, randParagraph, randUuid } from '@ngneat/falso';
+  
+  const generateDiscussion = () => ({
+    id: randUuid(),
+    title: randCatchPhrase(),
+    body: randParagraph(),
+    createdAt: Date.now(),
+  });
+  export const createDiscussion = (overrides) => {
+    return { ...generateDiscussion(), ...overrides };
+  };
+
+  // src/testing/mocks/handlers/discussions.ts
+  import { HttpResponse, http } from 'msw';
+  import { env } from '@/config/env';
+  import { db } from '../db';
+  import { requireAuth } from '../utils';
+
+  export const discussionsHandlers = [
+    http.get(`${env.API_URL}/discussions/:discussionId`, async ({ params, cookies }) => {
+      const discussionId = params.discussionId as string;
+      const { user, error } = requireAuth(cookies); // Using MSW utils
+      if (error) { /* ... */ }
+      const discussion = db.discussion.findFirst({ where: { id: { equals: discussionId } } }); // Using MSW db
+      // ... return mock response ...
+      return HttpResponse.json({ data: discussion })
+    }),
+    // ... other handlers
+  ];
+
+  // src/testing/setup-tests.ts
+  import '@testing-library/jest-dom/vitest';
+  import { server } from '@/testing/mocks/server';
+  import { initializeDb, resetDb } from '@/testing/mocks/db';
+
+  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+  afterAll(() => server.close());
+  beforeEach(() => initializeDb());
+  afterEach(() => { 
+    server.resetHandlers(); 
+    resetDb();
+  });
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Test file not in __tests__ directory
+  // src/components/ui/button/button.test.tsx
+
+  // Invalid: Global test utility defined within a specific test file
+  // src/features/auth/components/__tests__/login-form.test.tsx
+  const customRender = (ui, options) => { /* ... */ }; // Should be in src/testing/test-utils.tsx
+
+  // Invalid: Manually creating mock data directly in tests instead of using generators
+  // src/features/discussions/components/__tests__/discussion.test.tsx
+  const fakeDiscussion = {
+    id: '123', 
+    title: 'Test Title', 
+    body: 'Test Body', 
+    createdAt: 1678886400000 
+  }; // Should use createDiscussion() from data-generators
+
+  // Invalid: Not using MSW for API mocking (e.g., relying on actual API calls or manual fetch mocks)
+  // global.fetch = vi.fn(() => Promise.resolve({ json: () => Promise.resolve({}), ok: true }));
+  ```
+</example> 

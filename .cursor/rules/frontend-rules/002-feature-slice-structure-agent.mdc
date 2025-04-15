@@ -1,0 +1,102 @@
+# Feature Slice Structure
+
+## Critical Rules
+
+- **Location**: Domain-specific features MUST reside in `src/features/{feature-name}/` (e.g., `src/features/discussions/`).
+- **API Logic**: All backend interactions for a feature MUST be defined within an `api/` subdirectory.
+    - Name files descriptively based on the action (e.g., `get-posts.ts`, `create-post.ts`, `update-post.ts`).
+    - Define React Query hooks (`useQuery`, `useMutation`, `useInfiniteQuery`) within these files.
+    - Define query option functions (`getPostsQueryOptions`, `getInfinitePostsQueryOptions`) alongside hooks to manage query keys and logic centrally.
+    - Define Zod schemas for API input validation (e.g., `createPostInputSchema`) within the relevant API file.
+- **Components**: Feature-specific React components MUST be placed in a `components/` subdirectory (e.g., `src/features/discussions/components/discussions-list.tsx`).
+- **Tests**: Unit and integration tests for feature components MUST be colocated within the `components/` directory under a `__tests__/` subfolder (e.g., `src/features/auth/components/__tests__/login-form.test.tsx`).
+- **Optional Subdirectories**: Optionally, features can include `hooks/`, `lib/`, `types/`, `store/` (for Zustand stores if needed) for concerns strictly scoped to that feature.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/features/discussions/api/get-discussion.ts
+  import { useQuery, queryOptions } from '@tanstack/react-query';
+  import { api } from '@/lib/api-client';
+  import { Discussion } from '@/types/api';
+
+  export const getDiscussion = async ({ discussionId }: { discussionId: string }): Promise<{ data: Discussion }> => {
+    return api.get(`/discussions/${discussionId}`);
+  };
+
+  export const getDiscussionQueryOptions = (discussionId: string) => {
+    return queryOptions({
+      queryKey: ['discussions', discussionId],
+      queryFn: () => getDiscussion({ discussionId }),
+    });
+  };
+
+  export const useDiscussion = ({ discussionId }) => {
+    return useQuery(getDiscussionQueryOptions(discussionId));
+  };
+
+  // src/features/discussions/api/create-discussion.ts
+  import { useMutation, useQueryClient } from '@tanstack/react-query';
+  import { z } from 'zod';
+  import { api } from '@/lib/api-client';
+  import { Discussion } from '@/types/api';
+  import { getDiscussionsQueryOptions } from './get-discussions';
+
+  export const createDiscussionInputSchema = z.object({
+    title: z.string().min(1, 'Required'),
+    body: z.string().min(1, 'Required'),
+  });
+
+  export type CreateDiscussionInput = z.infer<typeof createDiscussionInputSchema>;
+
+  export const createDiscussion = async ({ data }: { data: CreateDiscussionInput }): Promise<Discussion> => {
+    return api.post(`/discussions`, data);
+  };
+
+  export const useCreateDiscussion = (/* ...mutation options... */) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: createDiscussion,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getDiscussionsQueryOptions().queryKey });
+        // ... other side effects
+      },
+      // ...rest
+    });
+  };
+
+  // src/features/discussions/components/discussions-list.tsx
+  import { useDiscussions } from '@/features/discussions/api/get-discussions';
+  // ... component implementation ...
+
+  // src/features/discussions/components/__tests__/discussions-list.test.tsx
+  // ... test implementation ...
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: API logic mixed directly in a component file
+  // src/features/discussions/components/discussions-list.tsx
+  import { useQuery } from '@tanstack/react-query';
+  import { api } from '@/lib/api-client';
+  
+  const fetchDiscussions = () => api.get('/discussions');
+
+  export const DiscussionsList = () => {
+    const { data } = useQuery({ queryKey: ['discussions'], queryFn: fetchDiscussions });
+    // ... component using data ...
+  }
+
+  // Invalid: Zod schema defined outside the relevant api file
+  // src/features/discussions/types/schemas.ts
+  export const createDiscussionSchema = z.object({ /* ... */ });
+
+  // Invalid: Components placed directly in the feature root
+  // src/features/discussions/discussion-card.tsx
+
+  // Invalid: Tests placed outside a __tests__ folder
+  // src/features/discussions/components/discussions-list.test.tsx 
+  ```
+</example> 

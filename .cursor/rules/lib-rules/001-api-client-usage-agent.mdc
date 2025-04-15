@@ -1,0 +1,87 @@
+# API Client Usage
+
+## Critical Rules
+
+- **Centralized Client**: All HTTP requests to the backend MUST use the methods provided by the `api` object exported from `src/lib/api-client.ts` (e.g., `api.get`, `api.post`, `api.patch`, `api.delete`).
+- **No Direct `fetch`**: Do NOT use the global `fetch` API directly for backend calls. Use the `api` client methods instead.
+- **Method Usage**: Use the appropriate method for the intended action (`GET` for retrieving data, `POST` for creating, `PATCH` or `PUT` for updating, `DELETE` for removing).
+- **Error Handling**: The API client automatically handles basic error notification display using `useNotifications` on the client-side. React Query hooks (`useQuery`, `useMutation`) should handle further error logic (e.g., showing error states in UI).
+- **Cookies**: The client handles passing cookies automatically for both server-side (via `next/headers`) and client-side requests.
+- **URL Construction**: Pass only the endpoint path (e.g., `/users`, `/discussions/${id}`) to the client methods. The base API URL (`env.API_URL`) is prepended automatically.
+- **Query Parameters**: Pass query parameters using the `params` option in the `options` object.
+- **Request Body**: Pass request bodies as the second argument for `post`, `put`, and `patch` methods.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/features/discussions/api/get-discussion.ts
+  import { api } from '@/lib/api-client';
+  import { Discussion } from '@/types/api';
+
+  export const getDiscussion = ({ discussionId }: { discussionId: string }): Promise<{ data: Discussion }> => {
+    // Correct: Using api.get with path
+    return api.get(`/discussions/${discussionId}`);
+  };
+
+  // src/features/comments/api/get-comments.ts
+  import { api } from '@/lib/api-client';
+  import { Comment, Meta } from '@/types/api';
+
+  export const getComments = ({ discussionId, page = 1 }): Promise<{ data: Comment[]; meta: Meta }> => {
+    // Correct: Using api.get with params option
+    return api.get(`/comments`, {
+      params: {
+        discussionId,
+        page,
+      },
+    });
+  };
+
+  // src/features/comments/api/create-comment.ts
+  import { api } from '@/lib/api-client';
+  import { Comment } from '@/types/api';
+  // ... CreateCommentInput type ...
+
+  export const createComment = ({ data }: { data: CreateCommentInput }): Promise<Comment> => {
+    // Correct: Using api.post with path and body
+    return api.post('/comments', data);
+  };
+
+  // src/features/users/api/delete-user.ts
+  import { api } from '@/lib/api-client';
+
+  export const deleteUser = ({ userId }: { userId: string }) => {
+    // Correct: Using api.delete with path
+    return api.delete(`/users/${userId}`);
+  };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Using global fetch directly
+  const fetchDiscussions = async () => {
+    const response = await fetch('http://my-api.com/discussions'); // Incorrect base URL handling, no shared config
+    return response.json();
+  };
+
+  // Invalid: Hardcoding full URL in api client call
+  import { api } from '@/lib/api-client';
+  const getDiscussion = (id) => {
+    return api.get(`http://my-api.com/discussions/${id}`); // Base URL is handled by client
+  }
+
+  // Invalid: Manually adding query params to URL string
+  import { api } from '@/lib/api-client';
+  const getComments = (discussionId, page) => {
+    return api.get(`/comments?discussionId=${discussionId}&page=${page}`); // Should use params option
+  }
+
+  // Invalid: Not using the specific method (e.g., using GET for delete)
+  import { api } from '@/lib/api-client';
+  const deleteComment = (id) => {
+    return api.get(`/comments/${id}/delete`); // Incorrect method and path
+  }
+  ```
+</example> 

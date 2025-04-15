@@ -1,0 +1,69 @@
+# UI Component Structure
+
+## Critical Rules
+
+- **Location**: Globally shared UI components MUST reside within `src/components/`.
+- **Atomic UI Components (`src/components/ui/`)**: 
+    - Place reusable, atomic UI components (like Button, Dialog, Input, etc., often based on libraries like Shadcn/ui or Radix) under `src/components/ui/`.
+    - Each atomic component MUST have its own directory (e.g., `src/components/ui/button/`).
+    - Inside the component directory:
+        - Component code: `{component-name}.tsx` (e.g., `button.tsx`).
+        - Barrel file: `index.ts` that exports the component (`export * from './button';`).
+        - Storybook stories: `{component-name}.stories.tsx` (e.g., `button.stories.tsx`).
+        - Tests: A `__tests__` subdirectory containing test files (e.g., `__tests__/button.test.tsx`).
+- **Layout Components**: Reusable page or section layout components MUST be placed in `src/components/layouts/` (e.g., `content-layout.tsx`).
+- **Error Components**: Global error boundary fallbacks or specific error display components MUST be placed in `src/components/errors/` (e.g., `main.tsx`).
+- **Barrel Files (`index.ts`)**: Barrel files ARE PERMITTED within `src/components/ui/{component-name}/` directories for re-exporting the component itself. They should generally be avoided elsewhere unless there's a strong justification (differs slightly from `core/001-code-standards-agent`).
+
+## Examples
+
+<example>
+  ```typescript
+  // src/components/ui/button/button.tsx
+  import * as React from 'react';
+  // ... component implementation ...
+  export const Button = React.forwardRef(/* ... */);
+
+  // src/components/ui/button/index.ts
+  export * from './button';
+
+  // src/components/ui/button/button.stories.tsx
+  import { Meta, StoryObj } from '@storybook/react';
+  import { Button } from './button';
+  // ... stories ...
+
+  // src/components/ui/button/__tests__/button.test.tsx
+  import { Button } from '../button';
+  // ... tests ...
+
+  // src/components/layouts/content-layout.tsx
+  export const ContentLayout = ({ children, title }) => { /* ... */ };
+
+  // src/components/errors/main.tsx
+  export const MainErrorFallback = () => { /* ... */ };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Placing atomic UI component directly in src/components/
+  // src/components/button.tsx 
+
+  // Invalid: Not using a barrel file for the UI component export
+  // File structure: src/components/ui/dialog/dialog.tsx (but no index.ts)
+  // Usage: import { Dialog } from '@/components/ui/dialog/dialog'; // Should be '@/components/ui/dialog'
+
+  // Invalid: Missing stories or tests for a UI component
+  // src/components/ui/card/card.tsx (exists)
+  // src/components/ui/card/index.ts (exists)
+  // (Missing card.stories.tsx and/or __tests__/card.test.tsx)
+
+  // Invalid: Placing general layout component inside src/components/ui/
+  // src/components/ui/page-layout.tsx
+
+  // Invalid: Creating unnecessary barrel file outside of src/components/ui/
+  // src/components/layouts/index.ts 
+  // export * from './content-layout';
+  // export * from './sidebar-layout';
+  ```
+</example> 

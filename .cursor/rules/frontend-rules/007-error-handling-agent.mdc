@@ -1,0 +1,126 @@
+# Error Handling Conventions (Error Boundaries)
+
+## Critical Rules
+
+- **Library**: Use the `react-error-boundary` library for implementing Error Boundaries.
+- **Placement**: Wrap major application sections (like main layouts in `src/app/**/layout.tsx` or `src/app/provider.tsx`) and potentially complex feature components that might throw rendering errors with an `<ErrorBoundary>`.
+- **Fallback UI**: Provide a meaningful `FallbackComponent` prop to the `<ErrorBoundary>`.
+    - For global boundaries (like in the root layout or provider), use a generic fallback component (e.g., `src/components/errors/main.tsx`) that allows the user to refresh or navigate away.
+    - For local boundaries around specific features, provide a more context-specific fallback (e.g., "Could not load comments.").
+- **Reset Keys**: Use the `key` prop on `<ErrorBoundary>` (often set to `pathname` or a relevant ID) within layouts or dynamic pages to ensure the boundary resets when the user navigates to a different route segment.
+- **Client-Side**: Error Boundaries are primarily for catching rendering errors in React components, so they are typically used within client components or components rendered by client components.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/components/errors/main.tsx (Global Fallback)
+  import { Button } from '../ui/button';
+
+  export const MainErrorFallback = () => {
+    return (
+      <div role="alert">
+        <h2>Ooops, something went wrong :(</h2>
+        <Button onClick={() => window.location.assign(window.location.origin)}>
+          Refresh
+        </Button>
+      </div>
+    );
+  };
+
+  // src/app/provider.tsx (Using global fallback in root provider)
+  'use client';
+  import { ErrorBoundary } from 'react-error-boundary';
+  import { MainErrorFallback } from '@/components/errors/main';
+  // ... other imports and providers ...
+
+  export const AppProvider = ({ children }) => {
+    // ... QueryClient setup ...
+    return (
+      <ErrorBoundary FallbackComponent={MainErrorFallback}> {/* Global Boundary */} 
+        <QueryClientProvider client={queryClient}>
+          {/* ... */} 
+          {children}
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  };
+
+  // src/app/app/_components/dashboard-layout.tsx (Using boundary with key in segment layout)
+  'use client';
+  import { ErrorBoundary } from 'react-error-boundary';
+  import { usePathname } from 'next/navigation';
+  
+  function Fallback({ error }: { error: Error }) {
+    return <p>Error loading section: {error.message}</p>;
+  }
+
+  export const DashboardLayout = ({ children }) => {
+    const pathname = usePathname();
+    return (
+      <Layout>
+        <ErrorBoundary key={pathname} FallbackComponent={Fallback}> {/* Boundary resets on route change */} 
+          {children}
+        </ErrorBoundary>
+      </Layout>
+    );
+  };
+
+  // src/app/app/discussions/[discussionId]/_components/discussion.tsx (Local boundary)
+  'use client';
+  import { ErrorBoundary } from 'react-error-boundary';
+  import { Comments } from '@/features/comments/components/comments';
+  
+  export const Discussion = ({ discussionId }) => {
+    // ... discussion view logic ...
+    return (
+      <ContentLayout title={/* ... */}>
+        {/* ... discussion view ... */}
+        <div className="mt-8">
+          <ErrorBoundary
+            fallback={
+              <div>Failed to load comments. Try to refresh the page.</div>
+            }
+          >
+            <Comments discussionId={discussionId} /> {/* Wrap specific fallible component */} 
+          </ErrorBoundary>
+        </div>
+      </ContentLayout>
+    );
+  };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Not using ErrorBoundary for major sections
+  // src/app/app/layout.tsx
+  const AppLayout = ({ children }) => {
+    return <div>{children}</div>; // Incorrect: Risk of entire section crashing on render error
+  }
+
+  // Invalid: Missing FallbackComponent
+  // src/app/provider.tsx
+  'use client';
+  import { ErrorBoundary } from 'react-error-boundary';
+  
+  export const AppProvider = ({ children }) => {
+    return (
+      <ErrorBoundary>
+        {children} {/* Incorrect: Boundary will just render null on error */} 
+      </ErrorBoundary>
+    );
+  }
+
+  // Invalid: Using try/catch for React rendering errors
+  // src/components/some-component.tsx
+  const SomeComponent = () => {
+    try {
+      // ... complex rendering logic that might throw ...
+      return <div>...</div>;
+    } catch (error) {
+      return <div>Error!</div>; // Incorrect: Error Boundaries are the standard React way
+    }
+  }
+  ```
+</example> 

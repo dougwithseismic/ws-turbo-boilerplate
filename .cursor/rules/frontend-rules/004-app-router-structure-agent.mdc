@@ -1,0 +1,141 @@
+# App Router Structure Conventions
+
+## Critical Rules
+
+- **Root Layout**: A root `src/app/layout.tsx` MUST exist and setup essential providers (like React Query, Error Boundaries) often via a dedicated `src/app/provider.tsx` component.
+- **Segment Layouts**: Each route segment SHOULD have its own `layout.tsx` to define shared UI for that segment and its children (e.g., `src/app/app/layout.tsx` for the authenticated app section).
+- **Page Components (`page.tsx`)**: These are Server Components by default.
+    - They MUST handle data fetching/prefetching (using React Query `prefetchQuery` or `prefetchInfiniteQuery`).
+    - They MUST handle passing initial data and dehydrated state to client components via `<HydrationBoundary>`. (Covered also in `001-frontend-feature-structure-agent.mdc`)
+    - They MUST export `metadata` for SEO. (Covered also in `001-frontend-feature-structure-agent.mdc`)
+    - They SHOULD primarily act as wrappers, rendering client components for the main UI.
+- **Colocated Client Components (`_components/`)**: Client components specific to a route segment (but potentially used by the layout or page within that segment) MUST be placed in a `_components/` subdirectory within that segment (e.g., `src/app/app/_components/dashboard-layout.tsx`, `src/app/app/discussions/[discussionId]/_components/discussion.tsx`). Mark these with `"use client"`.
+    - *Note*: Feature-specific client pages themselves should follow the `src/features/.../page/page.client.tsx` convention outlined in `001-frontend-feature-structure-agent.mdc`.
+- **Global Providers**: Define global contexts and providers (React Query Client, Error Boundary, etc.) in `src/app/provider.tsx` and use this in the root layout.
+- **Not Found**: Implement a custom 404 page using `src/app/not-found.tsx`.
+- **Route Grouping**: Use parentheses `()` for route groups that don't affect the URL path but group layouts/routes (e.g., `(marketing)`). Use standard folders for path segments (e.g., `app`, `auth`).
+- **Specific Routes**: 
+    - Authenticated application routes typically reside under `src/app/app/`.
+    - Authentication routes (login, register) MUST be under `src/app/auth/`.
+    - Publicly accessible pages (if different from main app pages) might be under `src/app/public/`.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/app/layout.tsx (Root Layout)
+  import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+  import { AppProvider } from '@/app/provider'; // Global providers
+  import { getUserQueryOptions } from '@/lib/auth';
+  import '@/styles/globals.css';
+
+  export const metadata = { /* ... */ };
+
+  const RootLayout = async ({ children }) => {
+    const queryClient = new QueryClient();
+    await queryClient.prefetchQuery(getUserQueryOptions()); // Prefetch user
+    const dehydratedState = dehydrate(queryClient);
+
+    return (
+      <html lang="en">
+        <body>
+          <AppProvider> {/* Use the provider component */} 
+            <HydrationBoundary state={dehydratedState}>
+              {children}
+            </HydrationBoundary>
+          </AppProvider>
+        </body>
+      </html>
+    );
+  };
+  export default RootLayout;
+
+  // src/app/provider.tsx (Global Providers)
+  'use client';
+  import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
+  import { ErrorBoundary } from 'react-error-boundary';
+  import { MainErrorFallback } from '@/components/errors/main';
+  import { Notifications } from '@/components/ui/notifications';
+  import { queryConfig } from '@/lib/react-query';
+  import * as React from 'react';
+
+  export const AppProvider = ({ children }) => {
+    const [queryClient] = React.useState(() => new QueryClient({ defaultOptions: queryConfig }));
+    return (
+      <ErrorBoundary FallbackComponent={MainErrorFallback}>
+        <QueryClientProvider client={queryClient}>
+          {/* Devtools, Notifications, etc. */} 
+          <Notifications />
+          {children}
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  };
+
+  // src/app/app/layout.tsx (Segment Layout)
+  import { DashboardLayout } from './_components/dashboard-layout'; // Uses colocated component
+
+  export const metadata = { /* ... */ };
+
+  const AppLayout = ({ children }) => {
+    return <DashboardLayout>{children}</DashboardLayout>;
+  };
+  export default AppLayout;
+
+  // src/app/app/discussions/page.tsx (Server Page Component)
+  import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+  import { getDiscussionsQueryOptions } from '@/features/discussions/api/get-discussions';
+  import { Discussions } from './_components/discussions'; // Uses colocated component
+
+  export const metadata = { /* ... */ };
+
+  const DiscussionsPage = async ({ searchParams }) => {
+    const queryClient = new QueryClient();
+    await queryClient.prefetchQuery(getDiscussionsQueryOptions({ /* ... */ }));
+    const dehydratedState = dehydrate(queryClient);
+
+    return (
+      <HydrationBoundary state={dehydratedState}>
+        <Discussions /> {/* Renders the client part */} 
+      </HydrationBoundary>
+    );
+  };
+  export default DiscussionsPage;
+
+  // src/app/app/discussions/_components/discussions.tsx (Colocated Client Component)
+  'use client';
+  import { ContentLayout } from '@/components/layouts/content-layout';
+  import { CreateDiscussion } from '@/features/discussions/components/create-discussion';
+  import { DiscussionsList } from '@/features/discussions/components/discussions-list';
+  // ... component logic using hooks ...
+  export const Discussions = () => { /* ... */ };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Missing root layout or provider setup
+
+  // Invalid: Defining client logic directly in src/app/**/page.tsx 
+  // src/app/app/dashboard/page.tsx
+  // 'use client'; 
+  // import { useState } from 'react'; 
+
+  // Invalid: Placing route-specific client components outside _components/
+  // src/app/app/dashboard-widget.tsx // Should be src/app/app/_components/dashboard-widget.tsx
+  
+  // Invalid: Fetching data directly in Layout components (Layouts should be passive)
+  // src/app/app/layout.tsx
+  // const data = await fetchSomeData(); // Should be done in page.tsx or client component
+
+  // Invalid: Missing HydrationBoundary in page.tsx when prefetching
+  // src/app/app/some/page.tsx
+  // const queryClient = new QueryClient();
+  // await queryClient.prefetchQuery(...);
+  // return <MyClientComponent /> // Missing HydrationBoundary wrapper
+
+  // Invalid: Grouping auth routes without using src/app/auth/
+  // src/app/login/page.tsx 
+  // src/app/register/page.tsx
+  ```
+</example> 

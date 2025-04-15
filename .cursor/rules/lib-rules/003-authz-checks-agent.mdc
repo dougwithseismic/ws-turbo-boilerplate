@@ -1,0 +1,115 @@
+# Authorization Checks Conventions
+
+## Critical Rules
+
+- **Location**: All permission-checking logic MUST be encapsulated in functions within `src/lib/authorization.ts`.
+- **Usage**: Import and use the relevant function from `src/lib/authorization.ts` (e.g., `canCreateDiscussion`, `canDeleteComment`, `canViewUsers`) to determine if the current user has permission for an action.
+- **Input**: These functions typically take the authenticated `user` object (or null/undefined) as the first argument, and potentially the resource being accessed (e.g., a `comment` object for `canDeleteComment`) as subsequent arguments.
+- **Implementation**: Authorization functions should contain clear, readable logic based on user roles (`user.role === 'ADMIN'`) or resource ownership (`comment.author?.id === user.id`).
+- **No Inline Logic**: Do NOT implement complex permission checks directly within components. Always defer to the functions in `src/lib/authorization.ts`.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/lib/authorization.ts
+  import { Comment, User } from '@/types/api';
+
+  export const canCreateDiscussion = (user: User | null | undefined) => {
+    return user?.role === 'ADMIN';
+  };
+
+  export const canDeleteComment = (user: User | null | undefined, comment: Comment) => {
+    if (user?.role === 'ADMIN') return true;
+    if (user?.role === 'USER' && comment.author?.id === user.id) return true;
+    return false;
+  };
+
+  // src/features/discussions/components/create-discussion.tsx
+  'use client';
+  import { useUser } from '@/lib/auth';
+  import { canCreateDiscussion } from '@/lib/authorization'; // Correct import
+  import { Button } from '@/components/ui/button';
+
+  export const CreateDiscussion = () => {
+    const user = useUser();
+
+    if (!canCreateDiscussion(user?.data)) { // Correct usage
+      return null; 
+    }
+
+    return (
+      <Button>Create Discussion</Button>
+      // ... rest of FormDrawer logic ...
+    );
+  };
+
+  // src/features/comments/components/comments-list.tsx
+  'use client';
+  import { useUser } from '@/lib/auth';
+  import { canDeleteComment } from '@/lib/authorization'; // Correct import
+  import { DeleteComment } from './delete-comment';
+
+  export const CommentsList = ({ discussionId }) => {
+    const user = useUser();
+    const comments = /* ... fetch comments ... */ [];
+
+    return (
+      <ul>
+        {comments.map((comment) => (
+          <li key={comment.id}>
+            {/* ... comment details ... */}
+            {canDeleteComment(user.data, comment) && ( // Correct usage
+              <DeleteComment discussionId={discussionId} id={comment.id} />
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Inline permission check logic in component
+  // src/features/discussions/components/create-discussion.tsx
+  'use client';
+  import { useUser } from '@/lib/auth';
+  import { Button } from '@/components/ui/button';
+
+  export const CreateDiscussion = () => {
+    const user = useUser();
+
+    // Incorrect: Logic should be in src/lib/authorization.ts
+    if (user?.data?.role !== 'ADMIN') { 
+      return null;
+    }
+    // ... 
+  };
+
+  // Invalid: Checking wrong property or complex logic inline
+  // src/features/comments/components/comments-list.tsx
+  'use client';
+  import { useUser } from '@/lib/auth';
+
+  export const CommentsList = ({ discussionId }) => {
+    const user = useUser();
+    const comments = [];
+
+    return (
+      <ul>
+        {comments.map((comment) => (
+          <li key={comment.id}>
+            {/* ... */}
+            {/* Incorrect: Logic is complex and not centralized */}
+            {(user.data?.role === 'ADMIN' || comment.author?.id === user.data?.id) && (
+              <button>Delete</button>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+  ```
+</example> 

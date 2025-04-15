@@ -1,0 +1,107 @@
+# Authentication Handling Conventions
+
+## Critical Rules
+
+- **Location**: All core authentication logic, including API calls, React Query hooks, and Zod schemas, MUST reside in `src/lib/auth.tsx`.
+- **Accessing User Data**: Use the `useUser()` hook to access the current authenticated user's data throughout the application. This hook utilizes React Query for caching and background updates.
+- **Login/Registration/Logout**: Use the specific React Query mutation hooks exported from `src/lib/auth.tsx`:
+    - `useLogin()` for handling login.
+    - `useRegister()` for handling registration.
+    - `useLogout()` for handling logout.
+- **API Calls**: Do NOT call the auth API endpoints (`/auth/me`, `/auth/login`, etc.) directly using the `api` client. Use the provided hooks which wrap these calls.
+- **Query Keys**: The user data query uses the key `['user']`. The auth hooks automatically manage invalidation and updates for this query key.
+- **Zod Schemas**: Use the exported Zod schemas (`loginInputSchema`, `registerInputSchema`) for validating login and registration form data.
+- **Server-Side User**: For accessing user data in Server Components or Route Handlers, use `queryClient.prefetchQuery(getUserQueryOptions())` or `queryClient.getQueryData(getUserQueryOptions().queryKey)` pattern, potentially combined with server-side session checks.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/app/app/_components/dashboard-info.tsx (Using useUser hook)
+  'use client';
+  import { useUser } from '@/lib/auth';
+
+  export const DashboardInfo = () => {
+    const user = useUser(); // Correct: Using the hook
+    if (user.isLoading) return <Spinner />;
+    if (!user.data) return <div>Not logged in</div>;
+    return <h1>Welcome {user.data.firstName}</h1>;
+  };
+
+  // src/features/auth/components/login-form.tsx (Using useLogin hook)
+  'use client';
+  import { useLogin, loginInputSchema } from '@/lib/auth';
+  import { Form, Input, Button } from '@/components/ui/form';
+
+  export const LoginForm = ({ onSuccess }) => {
+    const login = useLogin({ onSuccess }); // Correct: Using the hook
+    return (
+      <Form onSubmit={(values) => login.mutate(values)} schema={loginInputSchema}>
+        {({ register, formState }) => (
+          <>
+            <Input /* ... */ registration={register('email')} />
+            <Input /* ... */ registration={register('password')} />
+            <Button isLoading={login.isPending} type="submit">Log in</Button>
+          </>
+        )}
+      </Form>
+    );
+  };
+
+  // src/app/app/_components/dashboard-layout.tsx (Using useLogout hook)
+  'use client';
+  import { useLogout } from '@/lib/auth';
+  import { Button } from '@/components/ui/button';
+  import { useRouter } from 'next/navigation';
+
+  export const DashboardLayout = ({ children }) => {
+    const router = useRouter();
+    const logout = useLogout({ // Correct: Using the hook
+      onSuccess: () => router.push('/auth/login'),
+    });
+    return (
+      <div>
+        {/* ... layout ... */}
+        <Button onClick={() => logout.mutate()}>Sign Out</Button>
+        {children}
+      </div>
+    );
+  }
+
+  // src/app/layout.tsx (Prefetching user in root layout)
+  import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+  import { getUserQueryOptions } from '@/lib/auth'; // Correct: Using query options function
+
+  const RootLayout = async ({ children }) => {
+    const queryClient = new QueryClient();
+    await queryClient.prefetchQuery(getUserQueryOptions()); // Correct
+    const dehydratedState = dehydrate(queryClient);
+    // ... rest of layout using HydrationBoundary ...
+  }
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Calling auth API directly
+  import { api } from '@/lib/api-client';
+  const handleLogin = async (data) => {
+    const response = await api.post('/auth/login', data); // Incorrect: Should use useLogin hook
+    // ... manual state update ...
+  }
+
+  // Invalid: Fetching user data with raw useQuery instead of useUser hook
+  import { useQuery } from '@tanstack/react-query';
+  import { api } from '@/lib/api-client';
+  const fetchUser = () => api.get('/auth/me');
+  const Component = () => {
+      const { data } = useQuery({ queryKey: ['currentUser'], queryFn: fetchUser }); // Incorrect: Should use useUser()
+  }
+
+  // Invalid: Not using provided Zod schemas
+  // src/features/auth/components/login-form.tsx
+  import { z } from 'zod';
+  const myOwnLoginSchema = z.object({ /* ... */ }); // Incorrect: Should import loginInputSchema
+  // ... form using myOwnLoginSchema ...
+  ```
+</example> 

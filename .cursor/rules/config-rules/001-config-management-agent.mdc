@@ -1,0 +1,115 @@
+---
+title: Configuration Management Conventions
+---
+
+# Configuration Management Conventions
+
+## Critical Rules
+
+- **Environment Variables (`src/config/env.ts`)**:
+    - All environment variables MUST be defined, validated, and parsed in `src/config/env.ts`.
+    - Use Zod (`z`) to define the schema (`EnvSchema`) for expected environment variables, including types, defaults (`.optional().default(...)`), and transformations (`.transform(...)`).
+    - Access environment variables ONLY through the exported `env` object from this file.
+    - Do NOT access `process.env` directly in other parts of the application.
+- **Application Paths (`src/config/paths.ts`)**:
+    - All internal application route paths MUST be defined in the `paths` object exported from `src/config/paths.ts`.
+    - Structure the `paths` object logically, mirroring the application's route structure (e.g., `paths.app.discussions`, `paths.auth.login`).
+    - Each path entry MUST have a `getHref(...)` method that returns the string path, accepting parameters if needed (e.g., `paths.app.discussion.getHref(discussionId)`).
+    - Use these `paths` functions whenever creating links (`<Link href={...}>`) or programmatically navigating (`router.push(...)`).
+    - Do NOT hardcode route strings directly in components or other files.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/config/env.ts
+  import * as z from 'zod';
+  import 'dotenv/config';
+
+  const createEnv = () => {
+    const EnvSchema = z.object({
+      API_URL: z.string(), // Required
+      ENABLE_API_MOCKING: z.string().transform(s => s === 'true').optional(), // Optional boolean
+      APP_URL: z.string().optional().default('http://localhost:3000'), // Optional with default
+    });
+    const envVars = { /* ... read from process.env ... */ }; 
+    const parsedEnv = EnvSchema.safeParse(envVars);
+    if (!parsedEnv.success) { /* ... throw error ... */ }
+    return parsedEnv.data;
+  };
+  export const env = createEnv();
+
+  // src/lib/api-client.ts (Using env)
+  import { env } from '@/config/env'; // Correct import
+  const fullUrl = `${env.API_URL}${url}`; // Correct usage
+
+  // src/config/paths.ts
+  export const paths = {
+    home: {
+      getHref: () => '/',
+    },
+    auth: {
+      login: {
+        getHref: (redirectTo) => `/auth/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`,
+      },
+      // ... other auth paths
+    },
+    app: {
+      root: { getHref: () => '/app' },
+      discussion: {
+        getHref: (id: string) => `/app/discussions/${id}`,
+      },
+      // ... other app paths
+    },
+  } as const;
+
+  // src/components/ui/link/link.tsx (Using paths)
+  import NextLink from 'next/link';
+  import { paths } from '@/config/paths'; // Correct import
+
+  export const Logo = () => {
+    return <NextLink href={paths.home.getHref()}>Logo</NextLink>; // Correct usage
+  }
+  
+  // src/features/auth/components/login-form.tsx (Using paths)
+  import NextLink from 'next/link';
+  import { paths } from '@/config/paths';
+
+  export const LoginForm = () => {
+    // ...
+    return (
+      <NextLink href={paths.auth.register.getHref(redirectTo)}>
+        Register
+      </NextLink>
+    );
+  }
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Accessing process.env directly
+  // src/lib/some-module.ts
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL; // Incorrect: Should use import { env } from '@/config/env';
+
+  // Invalid: Missing Zod validation for env vars
+  // src/config/env.ts
+  // export const env = { API_URL: process.env.NEXT_PUBLIC_API_URL }; // Incorrect: No validation or parsing
+
+  // Invalid: Hardcoding route strings
+  // src/components/navigation.tsx
+  import Link from 'next/link';
+  const Nav = () => {
+    return (
+      <nav>
+        <Link href="/app">Dashboard</Link> {/* Incorrect: Should use paths.app.root.getHref() */} 
+        <Link href="/auth/login">Login</Link> {/* Incorrect: Should use paths.auth.login.getHref() */} 
+      </nav>
+    )
+  }
+
+  // Invalid: paths.ts function not accepting required parameter
+  // src/config/paths.ts
+  // app: { discussion: { getHref: () => '/app/discussions/some-id' } } // Incorrect: Should accept discussionId
+  ```
+</example> 

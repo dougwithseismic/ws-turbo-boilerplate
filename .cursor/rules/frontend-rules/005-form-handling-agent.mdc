@@ -1,0 +1,139 @@
+# Form Handling Conventions
+
+## Critical Rules
+
+- **Form Wrapper**: All forms MUST use the custom `<Form>` component exported from `src/components/ui/form/form.tsx`.
+    - This component provides integration with `react-hook-form` and Zod validation.
+- **Schema Validation**: A Zod schema MUST be defined (often colocated with the relevant API mutation hook/input type) and passed to the `<Form schema={...}>` prop.
+- **Submission**: Form submission logic MUST be passed via the `<Form onSubmit={...}>` prop. This handler receives the validated form values.
+- **Field Components**: Use the standardized input components from `src/components/ui/form/` (e.g., `Input`, `Select`, `Textarea`, `Switch`).
+    - These components internally use `FieldWrapper` for consistent label and error message display.
+- **Registration**: Pass the `register('fieldName')` result from the `react-hook-form` methods (provided by the `<Form>` render prop) to the `registration` prop of the field components.
+- **Error Display**: Access field errors via `formState.errors['fieldName']` and pass them to the `error` prop of the field components.
+- **Form Drawer**: For forms presented in a drawer/modal, use the `FormDrawer` component (`src/components/ui/form/form-drawer.tsx`) which combines the `Form` logic with a `Drawer`.
+    - Pass the trigger button, title, and submit button (linking to the form ID via the `form` attribute) as props.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/features/auth/components/login-form.tsx
+  'use client';
+  import { Button } from '@/components/ui/button';
+  import { Form, Input } from '@/components/ui/form'; // Standard Form components
+  import { useLogin, loginInputSchema } from '@/lib/auth'; // Zod schema from auth lib
+
+  export const LoginForm = ({ onSuccess }) => {
+    const login = useLogin({ onSuccess });
+
+    return (
+      <Form
+        onSubmit={(values) => { // Submission handler
+          login.mutate(values);
+        }}
+        schema={loginInputSchema} // Zod schema for validation
+      >
+        {({ register, formState }) => ( // Access RHF methods
+          <>
+            <Input
+              type="email"
+              label="Email Address"
+              error={formState.errors['email']} // Pass error state
+              registration={register('email')} // Pass registration
+            />
+            <Input
+              type="password"
+              label="Password"
+              error={formState.errors['password']}
+              registration={register('password')}
+            />
+            <Button isLoading={login.isPending} type="submit">Log in</Button>
+          </>
+        )}
+      </Form>
+    );
+  };
+
+  // src/features/discussions/components/create-discussion.tsx (Using FormDrawer)
+  'use client';
+  import { Button } from '@/components/ui/button';
+  import { Form, FormDrawer, Input, Textarea } from '@/components/ui/form';
+  import { useCreateDiscussion, createDiscussionInputSchema } from '../api/create-discussion';
+  
+  export const CreateDiscussion = () => {
+    const createDiscussionMutation = useCreateDiscussion({ /* ... */ });
+
+    return (
+      <FormDrawer
+        isDone={createDiscussionMutation.isSuccess}
+        triggerButton={<Button size="sm">Create Discussion</Button>}
+        title="Create Discussion"
+        submitButton={
+          <Button
+            isLoading={createDiscussionMutation.isPending}
+            form="create-discussion" // Links button to form
+            type="submit"
+            size="sm"
+          >
+            Submit
+          </Button>
+        }
+      >
+        <Form
+          id="create-discussion" // ID for submit button linkage
+          onSubmit={(values) => createDiscussionMutation.mutate({ data: values })}
+          schema={createDiscussionInputSchema}
+        >
+          {({ register, formState }) => (
+            <>
+              <Input label="Title" error={formState.errors['title']} registration={register('title')} />
+              <Textarea label="Body" error={formState.errors['body']} registration={register('body')} />
+            </>
+          )}
+        </Form>
+      </FormDrawer>
+    );
+  };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Using native <form> element instead of <Form> component
+  const MyForm = () => {
+    return (
+      <form onSubmit={/* ... */}>
+        <input name="email" /> 
+        <input type="password" name="password" />
+        <button type="submit">Submit</button>
+      </form>
+    ); // Incorrect: Lacks integration with RHF, Zod, and styled components
+  }
+
+  // Invalid: Using standard HTML inputs instead of custom components
+  import { Form } from '@/components/ui/form';
+  const AnotherForm = () => {
+    return (
+      <Form onSubmit={...} schema={...}>
+        {({ register, formState }) => (
+          <>
+            <label htmlFor="email">Email</label>
+            <input id="email" {...register('email')} /> {/* Incorrect: Use <Input> */} 
+            {formState.errors.email && <span>{formState.errors.email.message}</span>} {/* Error handling not using FieldWrapper */} 
+          </>
+        )}
+      </Form>
+    );
+  }
+
+  // Invalid: Missing schema prop on Form component
+  import { Form, Input } from '@/components/ui/form';
+  const SchemaLessForm = () => {
+    return (
+      <Form onSubmit={/* ... */}>
+        {/* ... Input fields ... */} 
+      </Form> // Incorrect: Validation will not work
+    );
+  }
+  ```
+</example> 

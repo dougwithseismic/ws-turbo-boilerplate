@@ -48,7 +48,6 @@
   "dependencies": {
     "@types/node": "^22.14.0",
     "chalk": "^5.4.1",
-    "n8n": "link:apps/packages/n8n",
     "yargs": "^17.7.2"
   },
   "packageManager": "pnpm@10.6.4+sha512.da3d715bfd22a9a105e6e8088cfc7826699332ded60c423b14ec613a185f1602206702ff0fe4c438cb15c979081ce4cb02568e364b15174503a63c7a8e2a5f6c",

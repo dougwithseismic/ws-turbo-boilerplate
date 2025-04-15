@@ -1,0 +1,91 @@
+# Supabase Interaction and Module Generation (@zer0/supabase)
+
+## Critical Rules
+
+- **Module Generation**:
+    - Use the templates in `packages/supabase/src/templates/` as the basis for generating new modules:
+        - `table-module.md` for basic Supabase table interaction functions (`packages/supabase/src/modules/<table_name>.ts`).
+        - `react-query-hooks-module.md` for React Query hooks (`packages/supabase/src/modules/<table_name>.react.ts`).
+    - Follow `kebab-case` for file naming (`<table_name>.ts`, `<table_name>.react.ts`).
+    - Ensure generated modules are exported from `packages/supabase/src/modules/index.ts`.
+- **Type Generation**:
+    - When database schema changes (after migrations), update the TypeScript types by running `pnpm supabase:gen:types`. This updates `packages/supabase/src/types/database.types.ts`.
+- **Supabase Client Usage (React Query Hooks)**:
+    - **NEVER** use a hook like `useSupabaseClient` *inside* the generated React Query hooks (`<table_name>.react.ts`).
+    - The `SupabaseClient` instance **MUST** be passed explicitly as an argument to the hooks or their `mutate` functions, as detailed in the `react-query-hooks-module.md` template.
+- **Migrations**:
+    - Database schema changes are managed via migration files in `packages/supabase/supabase/migrations/`.
+    - Use `pnpm db:diff` to generate new migration files based on schema changes.
+    - Use `pnpm db:push` to apply local migrations to the local Supabase instance.
+    - Use `pnpm db:reset` to reset the local database and apply all migrations and seeds.
+- **RLS and Triggers**:
+    - Be aware that Row Level Security policies (`0002_RLS_POLICIES.sql`) and database triggers/functions (`0000_BASE_SCHEMA.sql`, `0001_DEFAULT_ORG.sql`) are active and affect data access and manipulation.
+- **Scripts**:
+    - Utilize the `pnpm` scripts defined in `packages/supabase/package.json` for common Supabase tasks (e.g., `supabase:gen:types`, `db:push`, `db:reset`).
+
+## Examples
+
+<example>
+  ```typescript
+  // Correct usage of a generated React Query hook
+  import { use SupabaseClient } from '@/hooks/useSupabaseClient'; // Assume this exists elsewhere
+  import { useOrganization } from '@zer0/supabase'; // Import generated hook
+
+  function MyComponent({ orgId }: { orgId: string }) {
+    const supabase = useSupabaseClient(); // Get client instance OUTSIDE the hook
+    const { data: organization, isLoading } = useOrganization(orgId, { supabase }); // Pass client explicitly
+
+    if (isLoading) return <div>Loading...</div>;
+    return <div>{organization?.name}</div>;
+  }
+
+  // Correct usage of a mutation hook
+  import { useCreateOrganization } from '@zer0/supabase';
+
+  function AddOrgForm() {
+    const supabase = useSupabaseClient();
+    const mutation = useCreateOrganization();
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+      const name = formData.get('name') as string;
+      mutation.mutate({ supabase, insertData: { name } }); // Pass client and data to mutate
+    };
+    // ... form JSX ...
+  }
+  ```
+  ```bash
+  # Correct way to generate types after schema change
+  pnpm supabase:gen:types
+
+  # Correct way to apply migrations
+  pnpm db:push
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // packages/supabase/src/modules/organizations.react.ts
+  import { useSupabaseClient } from '@/hooks/useSupabaseClient'; // INVALID: Hook should not depend on external hooks internally
+  import { fetchOrganizationById } from './organizations';
+
+  export const useOrganization = (id: string): UseQueryResult<Organization, Error> => {
+    // INVALID: Supabase client should be passed as an argument, not fetched internally.
+    const supabase = useSupabaseClient();
+
+    return useQuery<Organization, Error>({
+      queryKey: ['organizations', id, supabase], // Passing supabase here is okay, but getting it internally is not
+      queryFn: async () => {
+        if (!supabase) throw new Error("Supabase client is required.");
+        // ... rest of the function ...
+      },
+      enabled: !!id && !!supabase,
+    });
+  };
+  ```
+  ```bash
+  # Incorrect: Bypassing pnpm scripts
+  npx supabase gen types typescript --local > src/types/database.types.ts
+  ```
+</example> 

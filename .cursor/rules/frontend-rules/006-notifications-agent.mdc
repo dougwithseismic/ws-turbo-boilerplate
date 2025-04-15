@@ -1,0 +1,148 @@
+# Notifications Conventions
+
+## Critical Rules
+
+- **Store & Hook**: The global notification state MUST be managed by the Zustand store defined in `src/components/ui/notifications/notifications-store.ts`.
+- **Adding Notifications**: ALWAYS use the `addNotification` function obtained from the `useNotifications()` hook to display a notification.
+- **Usage Context**: Call `addNotification` primarily within the `onSuccess` or `onError` callbacks of React Query mutations (`useMutation`) to provide feedback on asynchronous operations.
+- **Display Component**: The `Notifications` component (from `src/components/ui/notifications/notifications.tsx`) MUST be rendered once at a high level in the application (typically within `src/app/provider.tsx` or the root layout) to display the queued notifications.
+- **Notification Structure**: Notifications added MUST conform to the `Notification` type (id, type, title, message) defined in the store.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/components/ui/notifications/notifications-store.ts
+  import { nanoid } from 'nanoid';
+  import { create } from 'zustand';
+
+  export type Notification = {
+    id: string;
+    type: 'info' | 'warning' | 'success' | 'error';
+    title: string;
+    message?: string;
+  };
+
+  type NotificationsStore = {
+    notifications: Notification[];
+    addNotification: (notification: Omit<Notification, 'id'>) => void;
+    dismissNotification: (id: string) => void;
+  };
+
+  export const useNotifications = create<NotificationsStore>((set) => ({
+    notifications: [],
+    addNotification: (notification) => set((state) => ({
+      notifications: [...state.notifications, { id: nanoid(), ...notification }],
+    })),
+    dismissNotification: (id) => set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    })),
+  }));
+
+  // src/components/ui/notifications/notifications.tsx
+  'use client';
+  import { Notification } from './notification';
+  import { useNotifications } from './notifications-store';
+
+  export const Notifications = () => {
+    const { notifications, dismissNotification } = useNotifications();
+    return (
+      <div /* ... container styles ... */ >
+        {notifications.map((notification) => (
+          <Notification
+            key={notification.id}
+            notification={notification}
+            onDismiss={dismissNotification}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // src/app/provider.tsx (Rendering the Notifications component)
+  'use client';
+  import { Notifications } from '@/components/ui/notifications';
+  // ... other providers ...
+
+  export const AppProvider = ({ children }) => {
+    // ... QueryClientProvider, ErrorBoundary ...
+    return (
+      // ... other providers wrapper ...
+      <>
+        <Notifications /> { /* Correct: Rendered once globally */ }
+        {children}
+      </>
+      // ... 
+    );
+  };
+  
+  // src/features/comments/api/create-comment.ts (Using addNotification in mutation)
+  import { useMutation, useQueryClient } from '@tanstack/react-query';
+  import { useNotifications } from '@/components/ui/notifications'; // Correct import
+  // ... other imports ...
+
+  export const useCreateComment = ({ mutationConfig, discussionId }) => {
+    const queryClient = useQueryClient();
+    const { addNotification } = useNotifications(); // Correct hook usage
+
+    return useMutation({
+      mutationFn: createComment,
+      onSuccess: () => {
+        queryClient.invalidateQueries(/* ... */);
+        addNotification({ // Correct: Calling addNotification on success
+          type: 'success',
+          title: 'Comment Created',
+        });
+        mutationConfig?.onSuccess?.();
+      },
+      onError: (error) => {
+         addNotification({ // Example: Notification on error
+           type: 'error',
+           title: 'Failed to Create Comment',
+           message: error.message, 
+         });
+         mutationConfig?.onError?.(error);
+      },
+      // ...restConfig
+    });
+  };
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Trying to manage notification state manually in a component
+  // src/features/discussions/components/create-discussion.tsx
+  'use client';
+  import { useState } from 'react';
+  
+  const CreateDiscussion = () => {
+    const [showSuccess, setShowSuccess] = useState(false);
+    const mutation = useCreateDiscussion({
+      onSuccess: () => setShowSuccess(true), // Incorrect: Should use useNotifications
+    });
+    // ...
+    return (
+      <>
+        {showSuccess && <div>Success!</div>} 
+        {/* ... form ... */}
+      </>
+    );
+  }
+
+  // Invalid: Rendering <Notifications /> component multiple times
+  // src/app/app/layout.tsx
+  import { Notifications } from '@/components/ui/notifications';
+  const AppLayout = ({ children }) => {
+    return <div><Notifications />{children}</div>; // Incorrect: Should be rendered once globally
+  }
+  
+  // Invalid: Calling addNotification outside of useNotifications hook context
+  // src/lib/some-utility.ts
+  import { useNotifications } from '@/components/ui/notifications';
+  export const notifyUser = () => {
+    const { addNotification } = useNotifications(); // Incorrect: Cannot use hooks in regular functions
+    addNotification({ type: 'info', title: 'Info' });
+  }
+  ```
+</example> 

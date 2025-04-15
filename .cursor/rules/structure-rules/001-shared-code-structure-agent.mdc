@@ -1,0 +1,70 @@
+# Shared Code Structure Conventions
+
+## Critical Rules
+
+- **`src/lib/`**: Contains core application modules and third-party service integrations.
+    - Examples: `api-client.ts`, `auth.tsx`, `authorization.ts`, `react-query.ts`.
+    - Modules here often encapsulate significant pieces of functionality or external interactions.
+    - Colocate tests using `__tests__/` subdirectory (e.g., `src/lib/__tests__/authorization.test.tsx`).
+- **`src/hooks/`**: Contains globally reusable custom React hooks that are not tied to a specific feature.
+    - Examples: `useDisclosure.ts`.
+    - Feature-specific hooks belong in `src/features/{feature-name}/hooks/`.
+    - Colocate tests using `__tests__/` subdirectory (e.g., `src/hooks/__tests__/use-disclosure.test.ts`).
+- **`src/types/`**: Contains globally shared TypeScript types, especially those related to API contracts or core domain models.
+    - Example: `api.ts` defining types like `User`, `Discussion`, `Comment`, `BaseEntity`, `Meta`.
+    - Feature-specific types can reside in `src/features/{feature-name}/types/` if not shared.
+- **`src/utils/`**: Contains simple, globally reusable utility functions.
+    - Examples: `cn.ts` (for classnames), `format.ts` (for date formatting), `auth.ts` (for cookie utilities, potentially could be in `lib/` too).
+    - Functions should be small, pure, and widely applicable.
+- **Colocation**: Prefer colocating types, constants, and helpers within the module/feature where they are primarily used, unless they are truly globally shared across many unrelated parts of the application.
+
+## Examples
+
+<example>
+  ```typescript
+  // src/lib/api-client.ts - Core module for API interaction
+  export const api = { /* ... get, post, etc. ... */ };
+
+  // src/lib/auth.tsx - Core authentication logic and hooks
+  export const useUser = () => { /* ... */ };
+  export const useLogin = () => { /* ... */ };
+
+  // src/lib/authorization.ts - Permission checking functions
+  export const canDeleteComment = (user, comment) => { /* ... */ };
+
+  // src/hooks/use-disclosure.ts - Reusable hook for modal/drawer state
+  export const useDisclosure = (initial = false) => { /* ... */ };
+
+  // src/types/api.ts - Shared API type definitions
+  export type User = { /* ... */ };
+  export type Discussion = { /* ... */ };
+
+  // src/utils/cn.ts - Utility for combining class names
+  import { clsx } from 'clsx';
+  import { twMerge } from 'tailwind-merge';
+  export function cn(...inputs) { return twMerge(clsx(inputs)); }
+
+  // src/utils/format.ts - Utility for formatting dates
+  import dayjs from 'dayjs';
+  export const formatDate = (date) => dayjs(date).format('MMMM D, YYYY h:mm A');
+  ```
+</example>
+
+<example type="invalid">
+  ```typescript
+  // Invalid: Placing feature-specific logic in lib/
+  // src/lib/discussion-helpers.ts // Should likely be in src/features/discussions/lib/ or utils/
+
+  // Invalid: Placing feature-specific hook in src/hooks/
+  // src/hooks/use-discussion-comments.ts // Should be in src/features/discussions/hooks/ or src/features/comments/hooks/
+
+  // Invalid: Placing UI component logic in utils/
+  // src/utils/render-button.tsx // Should be a component in src/components/ui/button/
+
+  // Invalid: Defining component-specific types in src/types/
+  // src/types/button-props.ts // Should be colocated with the Button component
+
+  // Invalid: Placing large, complex module in utils/
+  // src/utils/complex-data-processor.ts // Might belong in src/lib/ or its own feature
+  ```
+</example> 
