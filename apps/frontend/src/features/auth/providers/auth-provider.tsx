@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoadingState(response.error ? "error" : "complete");
         if (!response.error) {
           const verifyParams = new URLSearchParams({
-            email: encodeURIComponent(data.email),
+            email: data.email,
             type: "signup",
           });
           router.push(`/auth/verify-request?${verifyParams.toString()}`);
@@ -201,6 +201,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     [],
   );
 
+  const signInWithOtp = useCallback(async (email: string) => {
+    setLoadingState("progress");
+    try {
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+      setLoadingState(error ? "error" : "complete");
+      return { data: null, error };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    setLoadingState("progress");
+    try {
+      const { data, error } = await supabaseClient.auth.verifyOtp({
+        email,
+        token,
+        type: "email",
+      });
+      setLoadingState(error ? "error" : "complete");
+      return { data, error };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const value: AuthContextType = useMemo(
     () => ({
       user,
@@ -213,6 +239,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       resetPassword,
       updatePassword,
       signInWithProvider,
+      signInWithOtp,
+      verifyOtp,
     }),
     [
       user,
@@ -224,6 +252,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       resetPassword,
       updatePassword,
       signInWithProvider,
+      signInWithOtp,
+      verifyOtp,
     ],
   );
 

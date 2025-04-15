@@ -28,6 +28,8 @@ export interface AuthContextType {
   signInWithProvider: (
     provider: "google" | "facebook" | "github",
   ) => Promise<{ data: string | null; error: Error | null }>;
+  signInWithOtp: (email: string) => Promise<AuthResponse>;
+  verifyOtp: (email: string, token: string) => Promise<AuthResponseWithSession>;
 }
 
 export const AuthContext = createContext<AuthContextType>(
@@ -45,6 +47,9 @@ export const AuthContext = createContext<AuthContextType>(
       Promise.reject(new Error("AuthContext not initialized")),
     signInWithProvider: () =>
       Promise.reject(new Error("AuthContext not initialized")),
+    signInWithOtp: () =>
+      Promise.reject(new Error("AuthContext not initialized")),
+    verifyOtp: () => Promise.reject(new Error("AuthContext not initialized")),
     // Add default stubs for other methods
   } as AuthContextType, // Cast to satisfy TS
 );

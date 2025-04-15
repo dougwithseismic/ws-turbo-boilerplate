@@ -95,7 +95,7 @@ export const ResetPasswordForm = () => {
               onClick={handleResend}
               disabled={cooldown > 0 || isLoading}
               variant="outline"
-              className="w-full relative"
+              className="w-full relative cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-95"
             >
               <span
                 className={`flex items-center justify-center transition-opacity duration-200 ${isLoading ? "opacity-0" : "opacity-100"}`}
@@ -113,8 +113,16 @@ export const ResetPasswordForm = () => {
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 500, damping: 20 }}
           >
-            <Button asChild variant="ghost" className="w-full">
+            <Button asChild variant="ghost" className="w-full cursor-pointer">
               <Link href="/login">Back to login</Link>
+            </Button>
+          </motion.div>
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+          >
+            <Button asChild variant="outline" className="w-full cursor-pointer">
+              <Link href="/register">Create a new account</Link>
             </Button>
           </motion.div>
         </div>
@@ -169,8 +177,16 @@ export const ResetPasswordForm = () => {
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 500, damping: 20 }}
       >
-        <Button asChild variant="ghost" className="w-full">
+        <Button asChild variant="ghost" className="w-full cursor-pointer">
           <Link href="/login">Back to login</Link>
+        </Button>
+      </motion.div>
+      <motion.div
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+      >
+        <Button asChild variant="outline" className="w-full cursor-pointer">
+          <Link href="/register">Create a new account</Link>
         </Button>
       </motion.div>
     </motion.form>

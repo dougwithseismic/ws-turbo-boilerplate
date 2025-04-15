@@ -105,7 +105,12 @@ enabled = true
 # in emails.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = [
+  "http://127.0.0.1:3000",
+  "https://127.0.0.1:3000",
+  "http://127.0.0.1:3000/auth/callback",
+  "https://127.0.0.1:3000/auth/callback"
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # If disabled, the refresh token will never expire.
@@ -138,7 +143,7 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -159,9 +164,25 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+[auth.email.template.magic_link]
+subject = "Your One-Time Code"
+content_path = "./supabase/emails/magic-link.html"
+
+[auth.email.template.invite]
+subject = "You've been invited!"
+content_path = "./supabase/emails/invite.html"
+
+[auth.email.template.confirm_email_change]
+subject = "Confirm Your Email Change"
+content_path = "./supabase/emails/confirm-email-change.html"
+
+[auth.email.template.confirm_new_email_change]
+subject = "Confirm Your New Email Address"
+content_path = "./supabase/emails/confirm-new-email-change.html"
+
+[auth.email.template.reset_password]
+subject = "Reset Your Password"
+content_path = "./supabase/emails/reset-password.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

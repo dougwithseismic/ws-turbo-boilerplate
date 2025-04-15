@@ -7,7 +7,6 @@ export function trackButtonClick(buttonId: string, buttonText: string) {
   analytics.track("button_click", {
     button_id: buttonId,
     button_text: buttonText,
-    timestamp: Date.now(),
   });
 }
 
@@ -19,9 +18,11 @@ export function trackPageView(path: string, title: string) {
     path,
     title,
     properties: {
-      referrer: document.referrer,
-      viewport_width: window.innerWidth,
-      viewport_height: window.innerHeight,
+      referrer: typeof document !== "undefined" ? document.referrer : undefined,
+      viewport_width:
+        typeof window !== "undefined" ? window.innerWidth : undefined,
+      viewport_height:
+        typeof window !== "undefined" ? window.innerHeight : undefined,
     },
   });
 }
@@ -38,25 +39,23 @@ export function identifyUser(userId: string, email: string, name: string) {
 }
 
 /**
- * Example of updating user consent
+ * Example of updating user consent (now uses consent mode)
  */
 export function updateUserConsent(allowAnalytics: boolean) {
-  const updated = updateConsent({
-    analytics: allowAnalytics,
-    functional: true,
+  updateConsent({
+    analytics_storage: allowAnalytics ? "granted" : "denied",
+    ad_storage: "denied",
+    functionality_storage: "granted",
+    personalization_storage: "denied",
+    security_storage: "granted",
   });
-
-  return updated;
 }
 
 /**
- * Helper to enable/disable debug mode
+ * Helper to enable/disable debug mode (noop for now)
  */
 export function enableDebugMode() {
-  const consolePlugin = analytics.plugins.find((p) => p.name === "console");
-  if (consolePlugin && typeof (consolePlugin as any).enable === "function") {
-    (consolePlugin as any).enable();
-  }
+  // No-op: Console plugin is always enabled in this setup
 }
 
 /**

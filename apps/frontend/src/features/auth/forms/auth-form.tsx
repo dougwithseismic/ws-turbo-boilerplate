@@ -258,7 +258,7 @@ export function AuthForm({
         <Button
           type="submit"
           disabled={isDisabled}
-          className="w-full relative overflow-hidden"
+          className="w-full relative overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-95"
         >
           <span
             className={`flex items-center justify-center transition-opacity duration-200 ${isLoading ? "opacity-0" : "opacity-100"}`}

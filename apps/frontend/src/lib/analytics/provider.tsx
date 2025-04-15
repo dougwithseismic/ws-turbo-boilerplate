@@ -7,10 +7,11 @@ import { useAnalytics } from "./use-analytics";
 interface AnalyticsProviderProps {
   children: ReactNode;
   defaultConsent?: {
-    analytics?: boolean;
-    functional?: boolean;
-    advertising?: boolean;
-    social?: boolean;
+    analytics_storage?: boolean;
+    ad_storage?: boolean;
+    functionality_storage?: boolean;
+    personalization_storage?: boolean;
+    social_storage?: boolean;
   };
 }
 
@@ -28,7 +29,15 @@ export function AnalyticsProvider({
 
     // Apply default consent settings if provided
     if (defaultConsent) {
-      updateConsent(defaultConsent);
+      // Convert boolean values to consent mode strings
+      updateConsent(
+        Object.fromEntries(
+          Object.entries(defaultConsent).map(([k, v]) => [
+            k,
+            v ? "granted" : "denied",
+          ]),
+        ),
+      );
     }
 
     // Clean up on unmount (not typically needed for analytics)

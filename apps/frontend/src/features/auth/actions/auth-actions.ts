@@ -103,7 +103,7 @@ export const executeResetPassword = async (data: {
   const supabase = await createSupabaseServerClient();
   // Note: You'll need to configure the redirect URL in your Supabase project settings
   // or provide it dynamically if needed.
-  const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/callback?next=/account/update-password`;
+  const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/update-password`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
     redirectTo: redirectUrl,
@@ -184,4 +184,19 @@ export const executeOAuthSignIn = async (
   }
 
   return { data: data.url, error: null };
+};
+
+// Exchange code for session (for use in auth/callback page)
+export const exchangeCodeForSession = async (
+  code: string,
+): Promise<{ error: Error | null }> => {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    console.error("Supabase exchangeCodeForSession Error:", error.message);
+    const customError: AuthError = new Error(error.message);
+    customError.code = error.code;
+    return { error: customError };
+  }
+  return { error: null };
 };

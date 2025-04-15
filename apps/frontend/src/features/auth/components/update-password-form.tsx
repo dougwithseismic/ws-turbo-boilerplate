@@ -83,13 +83,13 @@ export const UpdatePasswordForm = () => {
               required
               placeholder="Enter your current password"
               autoComplete="current-password"
-              className="pr-10"
+              className="pr-10 transition-all duration-200"
             />
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent cursor-pointer"
               onClick={() => setShowPasswords(!showPasswords)}
               disabled={isLoading}
             >
@@ -138,19 +138,31 @@ export const UpdatePasswordForm = () => {
         >
           <Button
             type="submit"
-            className="w-full relative"
+            className="w-full relative cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-95"
             disabled={isLoading}
           >
             <span
               className={`flex items-center justify-center transition-opacity duration-200 ${isLoading ? "opacity-0" : "opacity-100"}`}
             >
-              Update Password
+              {isLoading ? "Updating..." : "Update Password"}
             </span>
             {isLoading && (
               <span className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </span>
             )}
+          </Button>
+        </motion.div>
+        <motion.div
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
+        >
+          <Button
+            asChild
+            variant="ghost"
+            className="w-full cursor-pointer hover:bg-secondary/10 transition-all duration-200"
+          >
+            <a href="/login">Back to login</a>
           </Button>
         </motion.div>
       </motion.form>

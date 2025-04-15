@@ -172,13 +172,19 @@ export default function UpdatePasswordPage() {
             children={([canSubmit, isSubmitting]) => (
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-95 relative"
                 disabled={!canSubmit || isSubmitting || isLoading}
               >
+                <span
+                  className={`flex items-center justify-center transition-opacity duration-200 ${isSubmitting || isLoading ? "opacity-0" : "opacity-100"}`}
+                >
+                  Update Password
+                </span>
                 {(isSubmitting || isLoading) && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  </span>
                 )}
-                Update Password
               </Button>
             )}
           />

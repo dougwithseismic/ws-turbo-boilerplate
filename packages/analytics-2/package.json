@@ -1,0 +1,59 @@
+{
+  "dependencies": {
+    "nanoid": "^5.1.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.30",
+    "@vitest/coverage-v8": "^1.2.2",
+    "@vitest/ui": "^1.2.2",
+    "@zer0/eslint-config": "workspace:*",
+    "@zer0/typescript-config": "workspace:*",
+    "crypto": "^1.0.1",
+    "jsdom": "^24.0.0",
+    "prettier": "^3.2.5",
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "main": "./dist/index.js",
+  "name": "@zer0/analytics-2",
+  "private": true,
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "clean": "rm -rf dist",
+    "clean:all": "rm -rf dist node_modules",
+    "dev": "pnpm run build:watch",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "lint": "set TIMING=1 && eslint .",
+    "lint:fix": "set TIMING=1 && eslint . --fix",
+    "prepack": "pnpm run build",
+    "prepublishOnly": "pnpm run lint && pnpm run test:types && pnpm run format:check",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:run": "vitest run",
+    "test:types": "tsc --noEmit",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest",
+    "validate": "pnpm run lint && pnpm run test:run && pnpm run test:types && pnpm run format:check"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "0.0.0"
+}

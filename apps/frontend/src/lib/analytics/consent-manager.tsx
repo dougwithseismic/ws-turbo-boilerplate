@@ -9,16 +9,17 @@ interface ConsentManagerProps {
 
 export function ConsentManager({ onClose }: ConsentManagerProps) {
   const [consentSettings, setConsentSettings] = useState({
-    functional: true,
-    analytics: false,
-    advertising: false,
-    social: false,
+    functionality_storage: true,
+    analytics_storage: false,
+    ad_storage: false,
+    personalization_storage: false,
+    social_storage: false,
   });
 
   // Load saved consent settings from localStorage on mount
   useEffect(() => {
     try {
-      const savedSettings = localStorage.getItem("analytics_consent");
+      const savedSettings = localStorage.getItem("analytics2_consent_mode");
       if (savedSettings) {
         setConsentSettings(JSON.parse(savedSettings));
       }
@@ -36,7 +37,19 @@ export function ConsentManager({ onClose }: ConsentManagerProps) {
 
   const handleSave = () => {
     // Update consent in analytics
-    updateConsent(consentSettings);
+    updateConsent({
+      functionality_storage: consentSettings.functionality_storage
+        ? "granted"
+        : "denied",
+      analytics_storage: consentSettings.analytics_storage
+        ? "granted"
+        : "denied",
+      ad_storage: consentSettings.ad_storage ? "granted" : "denied",
+      personalization_storage: consentSettings.personalization_storage
+        ? "granted"
+        : "denied",
+      social_storage: consentSettings.social_storage ? "granted" : "denied",
+    });
 
     // Close the consent manager if callback provided
     if (onClose) {
@@ -74,8 +87,8 @@ export function ConsentManager({ onClose }: ConsentManagerProps) {
             </div>
             <input
               type="checkbox"
-              checked={consentSettings.functional}
-              onChange={() => handleToggle("functional")}
+              checked={consentSettings.functionality_storage}
+              onChange={() => handleToggle("functionality_storage")}
               className="w-5 h-5 cursor-pointer"
             />
           </div>
@@ -89,8 +102,8 @@ export function ConsentManager({ onClose }: ConsentManagerProps) {
             </div>
             <input
               type="checkbox"
-              checked={consentSettings.analytics}
-              onChange={() => handleToggle("analytics")}
+              checked={consentSettings.analytics_storage}
+              onChange={() => handleToggle("analytics_storage")}
               className="w-5 h-5 cursor-pointer"
             />
           </div>
@@ -104,8 +117,23 @@ export function ConsentManager({ onClose }: ConsentManagerProps) {
             </div>
             <input
               type="checkbox"
-              checked={consentSettings.advertising}
-              onChange={() => handleToggle("advertising")}
+              checked={consentSettings.ad_storage}
+              onChange={() => handleToggle("ad_storage")}
+              className="w-5 h-5 cursor-pointer"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Personalization</h3>
+              <p className="text-sm text-gray-500">
+                Personalize your experience
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={consentSettings.personalization_storage}
+              onChange={() => handleToggle("personalization_storage")}
               className="w-5 h-5 cursor-pointer"
             />
           </div>
@@ -119,8 +147,8 @@ export function ConsentManager({ onClose }: ConsentManagerProps) {
             </div>
             <input
               type="checkbox"
-              checked={consentSettings.social}
-              onChange={() => handleToggle("social")}
+              checked={consentSettings.social_storage}
+              onChange={() => handleToggle("social_storage")}
               className="w-5 h-5 cursor-pointer"
             />
           </div>

@@ -1,47 +1,47 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { useRouter } from "next/router";
-import analytics from "./index";
+import { usePathname, useSearchParams } from "next/navigation";
+import { analytics } from "./index";
 
 /**
  * React hook for using analytics in components
  */
 export function useAnalytics() {
-  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Track page views automatically when route changes
+  // Track page views automatically when URL changes
   useEffect(() => {
-    if (!router) return;
+    // Combine pathname and searchParams to get the full path
+    // Handle potential null initial value for searchParams if necessary
+    const currentSearchParams = searchParams ? searchParams.toString() : "";
+    const url = `${pathname}${currentSearchParams ? `?${currentSearchParams}` : ""}`;
 
-    // Function to handle route changes
-    const handleRouteChange = (url: string) => {
+    // Function to track page view (no longer needs url argument)
+    const trackPageView = () => {
       analytics.page({
         path: url,
-        title: document.title,
+        title: typeof document !== "undefined" ? document.title : undefined,
         properties: {
-          referrer: document.referrer,
-          url: window.location.href,
+          referrer:
+            typeof document !== "undefined" ? document.referrer : undefined,
+          url: typeof window !== "undefined" ? window.location.href : undefined,
         },
       });
     };
 
-    // Track initial page view
-    handleRouteChange(router.asPath);
-
-    // Add event listeners for route changes
-    router.events.on("routeChangeComplete", handleRouteChange);
-
-    // Clean up event listener
-    return () => {
-      router.events.off("routeChangeComplete", handleRouteChange);
-    };
-  }, [router]);
+    // Track page view whenever pathname or searchParams change
+    // Ensure pathname is available before tracking
+    if (pathname) {
+      trackPageView();
+    }
+  }, [pathname, searchParams]); // Depend on pathname and searchParams
 
   // Track custom event - using any for eventName to allow for custom event names
   const trackEvent = useCallback(
     (eventName: string, properties?: Record<string, unknown>) => {
-      analytics.track(eventName as any, properties);
+      analytics.track(eventName, properties);
     },
     [],
   );

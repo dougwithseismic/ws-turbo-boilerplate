@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/features/auth/providers/auth-provider";
+import { ConsentManagerButton } from "@/lib/analytics/consent-manager";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";

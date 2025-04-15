@@ -1,12 +1,12 @@
 // Export core instances and functions
-import { analytics, updateConsent } from "./index";
+export { analytics, updateConsent } from "./index";
 
-// Export components and hooks
+// (Optional) Export hooks/components if you want to keep them, or update as needed
 export { AnalyticsProvider } from "./provider";
 export { useAnalytics } from "./use-analytics";
 export { ConsentManager, ConsentManagerButton } from "./consent-manager";
 
-// Export utility functions
+// Export utility functions (update as needed for new API)
 export {
   trackButtonClick,
   trackPageView,
@@ -14,6 +14,3 @@ export {
   updateUserConsent,
   enableDebugMode,
 } from "./test";
-
-// Export core instances
-export { analytics, updateConsent };

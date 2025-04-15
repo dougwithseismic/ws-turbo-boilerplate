@@ -4,17 +4,27 @@ import { NextResponse, type NextRequest } from "next/server";
 // Define paths that don't require authentication
 const publicPaths = [
   "/", // Allow access to the home page
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/update-password",
+  "/auth/verify-request",
+  "/auth/verify-otp",
+  "/auth/callback", // Supabase auth callback
+  "/auth/auth-error", // Auth error page,
   "/login",
   "/register",
   "/forgot-password",
   "/update-password",
-  "/auth/callback", // Supabase auth callback
-  "/auth/auth-error", // Auth error page
   // Add any other public paths, like API routes if needed
 ];
 
 // Define paths that authenticated users should NOT be able to access (e.g., login page)
-const authOnlyPaths = ["/login", "/register", "/forgot-password"];
+const authOnlyPaths = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
