@@ -139,7 +139,7 @@ const promptForScope = async (): Promise<RenameConfig> => {
       type: "input",
       name: "newScope",
       message: "Enter your new package scope (e.g. @myorg):",
-      default: "@zer0",
+      default: "@withSeismic",
       validate: (input: string) => {
         if (!validateScope(input)) {
           return "Scope must start with @ and contain only alphanumeric characters, hyphens, and underscores";
@@ -150,7 +150,7 @@ const promptForScope = async (): Promise<RenameConfig> => {
   ]);
 
   return {
-    oldScope: "@zer0",
+    oldScope: "@withSeismic",
     newScope,
   };
 };

@@ -1,4 +1,4 @@
-# Supabase Interaction and Module Generation (@zer0/supabase)
+# Supabase Interaction and Module Generation (@withSeismic/supabase)
 
 ## Critical Rules
 
@@ -29,7 +29,7 @@
   ```typescript
   // Correct usage of a generated React Query hook
   import { use SupabaseClient } from '@/hooks/useSupabaseClient'; // Assume this exists elsewhere
-  import { useOrganization } from '@zer0/supabase'; // Import generated hook
+  import { useOrganization } from '@withSeismic/supabase'; // Import generated hook
 
   function MyComponent({ orgId }: { orgId: string }) {
     const supabase = useSupabaseClient(); // Get client instance OUTSIDE the hook
@@ -40,7 +40,7 @@
   }
 
   // Correct usage of a mutation hook
-  import { useCreateOrganization } from '@zer0/supabase';
+  import { useCreateOrganization } from '@withSeismic/supabase';
 
   function AddOrgForm() {
     const supabase = useSupabaseClient();

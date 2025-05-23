@@ -10,7 +10,7 @@ alwaysApply: true
 - **Package Manager**: Use `pnpm` for all package management tasks.
 - **Build Tool**: Use `tsup` for building packages. Configure it via `package.json`.
 - **Monorepo Structure**: Place reusable code in packages under `packages/` and applications under `apps/`.
-- **Package Naming**: Name all packages under the `@zer0/` scope (e.g., `@zer0/utils`, `@zer0/ui`).
+- **Package Naming**: Name all packages under the `@withSeismic/` scope (e.g., `@withSeismic/utils`, `@withSeismic/ui`).
 - **File/Directory Naming**: Use `kebab-case` for all file and directory names (e.g., `src/lib/utils.ts`, `src/components/user-profile`).
 - **TypeScript Usage**: All new code MUST be written in TypeScript (`.ts` or `.tsx`).
 - **Constant Definitions**: Use `UPPER_SNAKE_CASE` along with `as const` for defining read-only object literals or arrays that represent fixed collections or configurations.
@@ -27,7 +27,7 @@ alwaysApply: true
   ```typescript
   // packages/data-models/package.json
   {
-    "name": "@zer0/data-models",
+    "name": "@withSeismic/data-models",
     "version": "1.0.0",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -38,7 +38,7 @@ alwaysApply: true
     },
     "devDependencies": {
       "tsup": "^8.0.0",
-      "@zer0/typescript-config": "workspace:*"
+      "@withSeismic/typescript-config": "workspace:*"
     }
   }
 
@@ -52,7 +52,7 @@ alwaysApply: true
   };
 
   // Importing directly, avoiding barrel files
-  import { fetchUserProfile } from '@zer0/data-models/src/user-profile';
+  import { fetchUserProfile } from '@withSeismic/data-models/src/user-profile';
 
   // Basic Factory Example
   interface Plugin {
