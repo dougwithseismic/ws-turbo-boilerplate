@@ -16,6 +16,14 @@ const logger = createLogger({
   defaultMeta: { service: "analytics-gateway" },
   transports: [
     // Write to all logs with level `info` and below to `combined.log`
+    new transports.Console({
+      format: format.combine(
+        format.colorize(),
+        format.printf(
+          (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+        ),
+      ),
+    }),
     new transports.File({ filename: "logs/combined.log" }),
     // Write all logs error (and below) to `error.log`
     new transports.File({ filename: "logs/error.log", level: "error" }),

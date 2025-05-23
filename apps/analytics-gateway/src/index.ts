@@ -12,13 +12,6 @@ import eventsRoutes from "./modules/events/events.routes";
 
 config();
 
-// Create logs directory if it doesn't exist
-try {
-  mkdirSync("logs");
-} catch (error) {
-  // Ignore error if directory already exists
-}
-
 // Set development mode when not in production
 process.env.NODE_ENV = process.env.NODE_ENV || "development";
 

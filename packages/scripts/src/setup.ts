@@ -17,49 +17,41 @@ import * as path from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- Helper Functions from provided script --- START
-
 /**
- * Executes a shell command and streams the output.
+ * Executes a shell command with a timeout to prevent hanging.
  * @param {string} command - The command to execute.
  * @param {string} description - A description of the command being run.
  * @param {string} [cwd] - Optional current working directory for the command.
- */
-function runCommand(command: string, description: string, cwd?: string): void {
-  console.log(chalk.blue(`\nRunning: ${description}...`));
-  console.log(chalk.cyan(`> ${command}`));
-  try {
-    execSync(command, { stdio: "inherit", cwd: cwd || process.cwd() });
-    console.log(chalk.green(`\n✓ ${description} completed successfully.`));
-  } catch (error) {
-    console.error(chalk.red(`\n✗ Error running ${description}:`));
-    console.error(
-      chalk.red("Command failed. Please check the output above for details."),
-    );
-    process.exit(1); // Exit if command fails
-  }
-}
-
-/**
- * Executes a shell command and streams the output, but doesn't exit on error.
- * @param {string} command - The command to execute.
- * @param {string} description - A description of the command being run.
- * @param {string} [cwd] - Optional current working directory for the command.
+ * @param {number} [timeoutMs=30000] - Timeout in milliseconds (default: 30 seconds).
  * @returns {boolean} - Whether the command executed successfully.
  */
-function runCommandWithFallback(
+function runCommandWithTimeout(
   command: string,
   description: string,
   cwd?: string,
+  timeoutMs: number = 30000,
 ): boolean {
   console.log(chalk.blue(`\nRunning: ${description}...`));
   console.log(chalk.cyan(`> ${command}`));
+  console.log(chalk.gray(`  (Timeout: ${timeoutMs / 1000}s)`));
+
   try {
-    execSync(command, { stdio: "inherit", cwd: cwd || process.cwd() });
+    execSync(command, {
+      stdio: "inherit",
+      cwd: cwd || process.cwd(),
+      timeout: timeoutMs,
+    });
     console.log(chalk.green(`\n✓ ${description} completed successfully.`));
     return true;
-  } catch (error) {
-    console.error(chalk.red(`\n✗ Error running ${description}:`));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.signal === "SIGTERM" || error.code === "ETIMEDOUT") {
+      console.error(
+        chalk.red(`\n✗ ${description} timed out after ${timeoutMs / 1000}s`),
+      );
+    } else {
+      console.error(chalk.red(`\n✗ Error running ${description}:`));
+    }
     console.error(chalk.yellow("Command failed, but continuing with setup."));
     return false;
   }
@@ -72,13 +64,15 @@ function runCommandWithFallback(
 function checkDockerStatus(): void {
   console.log(chalk.blue("Checking if Docker is running..."));
   try {
-    execSync("docker ps -q", { stdio: "ignore" });
+    execSync("docker ps -q", { stdio: "ignore", timeout: 10000 });
     console.log(chalk.green("✓ Docker appears to be running."));
-  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
     console.error(
       chalk.red(
         "Error: Docker does not seem to be running or is unresponsive.",
       ),
+      error,
     );
     console.log(
       chalk.yellow(
@@ -200,17 +194,19 @@ const setupSupabaseLocal = async () => {
       `\nEnsuring dependencies are installed in ${supabasePackageDir}...`,
     ),
   );
-  runCommandWithFallback(
+  runCommandWithTimeout(
     "pnpm install",
     "Installing Supabase package dependencies",
     supabasePackageDir,
+    180000, // 3 minute timeout
   );
 
   // Build Supabase package first before doing any operations
-  runCommandWithFallback(
+  runCommandWithTimeout(
     "pnpm build",
     "Building Supabase package",
     supabasePackageDir,
+    240000, // 4 minute timeout
   );
 
   // Setup ports for Supabase
@@ -222,31 +218,51 @@ const setupSupabaseLocal = async () => {
       chalk.yellow(
         "\n⚠️ Could not set up ports for Supabase. Will use default ports instead.",
       ),
+      error,
     );
   }
 
-  // Try to stop Supabase - don't exit if it fails
-  console.log(chalk.blue("\nStopping any running Supabase services..."));
-  try {
-    execSync("npx supabase stop", {
-      stdio: "inherit",
-      cwd: supabasePackageDir,
-    });
-    console.log(chalk.green("✓ Successfully stopped Supabase services."));
-  } catch (stopError) {
+  // Check if Supabase is already running before attempting to stop
+  console.log(chalk.blue("\nChecking current Supabase status..."));
+  const isRunning = runCommandWithTimeout(
+    "npx supabase status",
+    "Checking if Supabase is already running",
+    supabasePackageDir,
+    15000, // 15 second timeout
+  );
+
+  // Only attempt to stop if we can confirm it's running
+  if (isRunning) {
+    console.log(chalk.blue("\nStopping any running Supabase services..."));
+    const stopped = runCommandWithTimeout(
+      "npx supabase stop",
+      "Stopping Supabase services",
+      supabasePackageDir,
+      30000, // 30 second timeout
+    );
+
+    if (!stopped) {
+      console.log(
+        chalk.yellow(
+          "⚠️ Could not stop Supabase services cleanly. This might be normal if no services were running.",
+        ),
+      );
+    }
+  } else {
     console.log(
-      chalk.yellow(
-        "Note: Failed to stop Supabase services, but that's okay. Continuing...",
+      chalk.gray(
+        "No Supabase services detected or status check failed. Skipping stop step.",
       ),
     );
   }
 
   // Start Supabase with all services
   console.log(chalk.blue("\nStarting Supabase with all services..."));
-  const startSuccessful = runCommandWithFallback(
+  const startSuccessful = runCommandWithTimeout(
     "npx supabase start",
     "Starting Supabase services",
     supabasePackageDir,
+    120000, // 2 minute timeout for start (can take longer)
   );
 
   if (!startSuccessful) {
@@ -258,16 +274,20 @@ const setupSupabaseLocal = async () => {
     return; // Don't try gen:keys or status if start failed
   }
 
-  runCommandWithFallback(
+  // Generate Supabase keys with timeout
+  runCommandWithTimeout(
     "pnpm run supabase:gen:keys",
     "Generating Supabase keys",
     supabasePackageDir,
+    60000, // 1 minute timeout
   );
 
-  runCommandWithFallback(
+  // Final status check with timeout
+  runCommandWithTimeout(
     "npx supabase status",
-    "Checking Supabase status",
+    "Checking final Supabase status",
     supabasePackageDir,
+    15000, // 15 second timeout
   );
 
   // Update environment variables in all apps to match the Supabase setup
@@ -280,6 +300,7 @@ const setupSupabaseLocal = async () => {
       chalk.yellow(
         "\n⚠️ Could not update environment variables. You may need to manually update your .env files with the correct Supabase URL and ports.",
       ),
+      error,
     );
   }
 
@@ -304,13 +325,20 @@ const executeSteps = async (
           console.log(
             chalk.blue("🔄 Running pnpm install after renaming packages..."),
           );
-          try {
-            execSync("pnpm install", { stdio: "inherit" });
-            console.log(chalk.green("✓ pnpm install completed successfully."));
-          } catch (error: any) {
-            console.error(chalk.red("❌ pnpm install failed:"), error?.message);
-            // Optionally re-throw or handle the error appropriately
-            throw new Error("pnpm install failed after renaming packages.");
+          const installSuccessful = runCommandWithTimeout(
+            "pnpm install",
+            "Installing dependencies after package rename",
+            undefined, // Use current directory
+            180000, // 3 minute timeout for install
+          );
+
+          if (!installSuccessful) {
+            console.error(
+              chalk.red("❌ pnpm install failed after renaming packages."),
+            );
+            console.log(
+              chalk.yellow("You may need to run 'pnpm install' manually."),
+            );
           }
         }
         break;
@@ -325,6 +353,7 @@ const executeSteps = async (
 };
 
 export const setupProject = async (
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: SetupOptions = {},
 ): Promise<void> => {
   showBanner();
