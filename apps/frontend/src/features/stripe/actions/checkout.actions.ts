@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/config";
-import { createCheckoutSession as createStripeCheckoutSession } from "@zer0/stripe"; // Renamed import to avoid conflict
+import { createCheckoutSession as createStripeCheckoutSession } from "@maestro/stripe"; // Renamed import to avoid conflict
 import Stripe from "stripe";
 import { headers } from "next/headers"; // To get referer for cancel/success URLs if needed
 

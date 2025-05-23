@@ -6,7 +6,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "@zer0/typescript-config": "workspace:*",
+    "@maestro/typescript-config": "workspace:*",
     "eslint": "^9.24.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"
@@ -16,7 +16,7 @@
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "name": "@zer0/stripe",
+  "name": "@maestro/stripe",
   "private": true,
   "scripts": {
     "build": "tsup",

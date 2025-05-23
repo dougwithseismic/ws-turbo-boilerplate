@@ -3,7 +3,7 @@ import {
   withConsole,
   withConsentMode,
   withLogger,
-} from "@zer0/analytics-2";
+} from "@maestro/analytics-2";
 
 // Create consent mode middleware instance
 export const consentMode = withConsentMode();

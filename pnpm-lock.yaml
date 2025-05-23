@@ -129,6 +129,15 @@ importers:
       "@hono/zod-validator":
         specifier: ^0.4.3
         version: 0.4.3(hono@4.7.5)(zod@3.24.2)
+      "@maestro/stripe":
+        specifier: workspace:*
+        version: link:../../packages/stripe
+      "@maestro/supabase":
+        specifier: workspace:*
+        version: link:../../packages/supabase
+      "@maestro/typescript-config":
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
       "@stripe/stripe-js":
         specifier: ^7.0.0
         version: 7.0.0
@@ -138,15 +147,6 @@ importers:
       "@types/cron":
         specifier: ^2.4.3
         version: 2.4.3
-      "@zer0/stripe":
-        specifier: workspace:*
-        version: link:../../packages/stripe
-      "@zer0/supabase":
-        specifier: workspace:*
-        version: link:../../packages/supabase
-      "@zer0/typescript-config":
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       ai:
         specifier: ^4.3.2
         version: 4.3.2(react@19.1.0)(zod@3.24.2)
@@ -223,6 +223,18 @@ importers:
       "@hookform/resolvers":
         specifier: ^5.0.1
         version: 5.0.1(react-hook-form@7.55.0(react@19.1.0))
+      "@maestro/analytics":
+        specifier: workspace:*
+        version: link:../../packages/analytics
+      "@maestro/analytics-2":
+        specifier: workspace:*
+        version: link:../../packages/analytics-2
+      "@maestro/stripe":
+        specifier: workspace:*
+        version: link:../../packages/stripe
+      "@maestro/supabase":
+        specifier: workspace:*
+        version: link:../../packages/supabase
       "@radix-ui/react-accordion":
         specifier: ^1.2.3
         version: 1.2.3(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -328,18 +340,6 @@ importers:
       "@tanstack/zod-form-adapter":
         specifier: ^0.42.1
         version: 0.42.1(zod@3.24.2)
-      "@zer0/analytics":
-        specifier: workspace:*
-        version: link:../../packages/analytics
-      "@zer0/analytics-2":
-        specifier: workspace:*
-        version: link:../../packages/analytics-2
-      "@zer0/stripe":
-        specifier: workspace:*
-        version: link:../../packages/stripe
-      "@zer0/supabase":
-        specifier: workspace:*
-        version: link:../../packages/supabase
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -465,6 +465,12 @@ importers:
         specifier: ^3.22.4
         version: 3.24.2
     devDependencies:
+      "@maestro/eslint-config":
+        specifier: workspace:*
+        version: link:../eslint-config
+      "@maestro/typescript-config":
+        specifier: workspace:*
+        version: link:../typescript-config
       "@types/node":
         specifier: ^20.17.30
         version: 20.17.30
@@ -474,12 +480,6 @@ importers:
       "@vitest/ui":
         specifier: ^1.2.2
         version: 1.6.1(vitest@2.1.9)
-      "@zer0/eslint-config":
-        specifier: workspace:*
-        version: link:../eslint-config
-      "@zer0/typescript-config":
-        specifier: workspace:*
-        version: link:../typescript-config
       crypto:
         specifier: ^1.0.1
         version: 1.0.1
@@ -508,6 +508,12 @@ importers:
         specifier: ^3.22.4
         version: 3.24.2
     devDependencies:
+      "@maestro/eslint-config":
+        specifier: workspace:*
+        version: link:../eslint-config
+      "@maestro/typescript-config":
+        specifier: workspace:*
+        version: link:../typescript-config
       "@types/node":
         specifier: ^20.17.30
         version: 20.17.30
@@ -517,12 +523,6 @@ importers:
       "@vitest/ui":
         specifier: ^1.2.2
         version: 1.6.1(vitest@2.1.9)
-      "@zer0/eslint-config":
-        specifier: workspace:*
-        version: link:../eslint-config
-      "@zer0/typescript-config":
-        specifier: workspace:*
-        version: link:../typescript-config
       crypto:
         specifier: ^1.0.1
         version: 1.0.1
@@ -596,18 +596,18 @@ importers:
         specifier: ^12.5.2
         version: 12.5.2(@types/node@22.14.0)
     devDependencies:
+      "@maestro/eslint-config":
+        specifier: workspace:*
+        version: link:../eslint-config
+      "@maestro/typescript-config":
+        specifier: workspace:*
+        version: link:../typescript-config
       "@types/inquirer":
         specifier: ^9.0.7
         version: 9.0.7
       "@types/node":
         specifier: ^22.14.0
         version: 22.14.0
-      "@zer0/eslint-config":
-        specifier: workspace:*
-        version: link:../eslint-config
-      "@zer0/typescript-config":
-        specifier: workspace:*
-        version: link:../typescript-config
       eslint:
         specifier: ^9.24.0
         version: 9.24.0(jiti@2.4.2)
@@ -627,12 +627,12 @@ importers:
         specifier: ^18.0.0
         version: 18.0.0
     devDependencies:
+      "@maestro/typescript-config":
+        specifier: workspace:*
+        version: link:../typescript-config
       "@types/node":
         specifier: ^22.14.0
         version: 22.14.0
-      "@zer0/typescript-config":
-        specifier: workspace:*
-        version: link:../typescript-config
       eslint:
         specifier: ^9.24.0
         version: 9.24.0(jiti@2.4.2)
@@ -655,12 +655,12 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1
     devDependencies:
+      "@maestro/typescript-config":
+        specifier: workspace:*
+        version: link:../typescript-config
       "@types/node":
         specifier: ^22.14.0
         version: 22.14.0
-      "@zer0/typescript-config":
-        specifier: workspace:*
-        version: link:../typescript-config
       eslint:
         specifier: ^9.24.0
         version: 9.24.0(jiti@2.4.2)

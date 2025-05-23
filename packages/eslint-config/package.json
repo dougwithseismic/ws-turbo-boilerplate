@@ -17,7 +17,7 @@
     "./next-js": "./next.js",
     "./react-internal": "./react-internal.js"
   },
-  "name": "@zer0/eslint-config",
+  "name": "@maestro/eslint-config",
   "private": true,
   "type": "module",
   "version": "0.0.0"

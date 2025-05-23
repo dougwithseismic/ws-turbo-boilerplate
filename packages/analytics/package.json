@@ -6,8 +6,8 @@
     "@types/node": "^20.17.30",
     "@vitest/coverage-v8": "^1.2.2",
     "@vitest/ui": "^1.2.2",
-    "@zer0/eslint-config": "workspace:*",
-    "@zer0/typescript-config": "workspace:*",
+    "@maestro/eslint-config": "workspace:*",
+    "@maestro/typescript-config": "workspace:*",
     "crypto": "^1.0.1",
     "jsdom": "^24.0.0",
     "prettier": "^3.2.5",
@@ -30,7 +30,7 @@
     "src"
   ],
   "main": "./dist/index.js",
-  "name": "@zer0/analytics",
+  "name": "@maestro/analytics",
   "private": true,
   "scripts": {
     "build": "tsup",

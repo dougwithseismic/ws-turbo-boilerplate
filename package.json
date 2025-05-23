@@ -14,13 +14,13 @@
     "template:fetch": "git fetch template",
     "template:merge": "git merge template/main --allow-unrelated-histories",
     "template:update": "pnpm template:fetch && pnpm template:merge",
-    "supabase:start": "pnpm --filter @zer0/supabase supabase:start",
-    "supabase:stop": "pnpm --filter @zer0/supabase supabase:stop",
-    "supabase:status": "pnpm --filter @zer0/supabase supabase:status",
-    "supabase:db:reset": "pnpm --filter @zer0/supabase supabase:db:reset",
-    "supabase:db:push": "pnpm --filter @zer0/supabase supabase:db:push",
-    "supabase:db:migrate": "pnpm --filter @zer0/supabase supabase:db:migrate",
-    "supabase:db:rollback": "pnpm --filter @zer0/supabase supabase:db:rollback"
+    "supabase:start": "pnpm --filter @maestro/supabase supabase:start",
+    "supabase:stop": "pnpm --filter @maestro/supabase supabase:stop",
+    "supabase:status": "pnpm --filter @maestro/supabase supabase:status",
+    "supabase:db:reset": "pnpm --filter @maestro/supabase supabase:db:reset",
+    "supabase:db:push": "pnpm --filter @maestro/supabase supabase:db:push",
+    "supabase:db:migrate": "pnpm --filter @maestro/supabase supabase:db:migrate",
+    "supabase:db:rollback": "pnpm --filter @maestro/supabase supabase:db:rollback"
   },
   "devDependencies": {
     "husky": "^9.1.7",

@@ -31,6 +31,10 @@ const updateFileContent = async (
         .replace(
           new RegExp(`extends "${oldScope}/([^"]+)"`, "g"),
           `extends "${newScope}/$1"`,
+        )
+        .replace(
+          new RegExp(`--filter ${oldScope}/([^\\s"]+)`, "g"),
+          `--filter ${newScope}/$1`,
         );
     }
 

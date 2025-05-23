@@ -5,7 +5,7 @@
     "./react-library": "./react-library.json"
   },
   "license": "MIT",
-  "name": "@zer0/typescript-config",
+  "name": "@maestro/typescript-config",
   "private": true,
   "publishConfig": {
     "access": "public"

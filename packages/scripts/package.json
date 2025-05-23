@@ -1,5 +1,5 @@
 {
-  "name": "@zer0/scripts",
+  "name": "@maestro/scripts",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,8 +14,8 @@
   "devDependencies": {
     "@types/inquirer": "^9.0.7",
     "@types/node": "^22.14.0",
-    "@zer0/eslint-config": "workspace:*",
-    "@zer0/typescript-config": "workspace:*",
+    "@maestro/eslint-config": "workspace:*",
+    "@maestro/typescript-config": "workspace:*",
     "eslint": "^9.24.0",
     "typescript": "5.8.3"
   },

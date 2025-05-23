@@ -100,7 +100,8 @@ const setupSteps: SetupStep[] = [
     name: "Rename packages",
     value: "rename-packages",
     checked: true,
-    description: "Updates all package names and imports to use your scope",
+    description:
+      "Updates all package names, imports, and scripts to use your scope",
   },
   {
     name: "Setup Supabase ports",
@@ -137,8 +138,8 @@ const promptForScope = async (): Promise<RenameConfig> => {
     {
       type: "input",
       name: "newScope",
-      message: "Enter your package scope (e.g. @myorg):",
-      default: "@repo",
+      message: "Enter your new package scope (e.g. @myorg):",
+      default: "@zer0",
       validate: (input: string) => {
         if (!validateScope(input)) {
           return "Scope must start with @ and contain only alphanumeric characters, hyphens, and underscores";
@@ -149,7 +150,7 @@ const promptForScope = async (): Promise<RenameConfig> => {
   ]);
 
   return {
-    oldScope: "@repo",
+    oldScope: "@zer0",
     newScope,
   };
 };

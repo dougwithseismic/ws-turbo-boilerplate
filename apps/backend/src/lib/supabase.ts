@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Database } from "@zer0/supabase";
+import { Database } from "@maestro/supabase";
 
 if (!process.env.SUPABASE_URL) {
   throw new Error("Missing environment variable: SUPABASE_URL");

@@ -6,7 +6,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    "@zer0/typescript-config": "workspace:*",
+    "@maestro/typescript-config": "workspace:*",
     "eslint": "^9.24.0",
     "rimraf": "^6.0.1",
     "tsup": "^8.4.0",
@@ -18,7 +18,7 @@
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "name": "@zer0/supabase",
+  "name": "@maestro/supabase",
   "private": true,
   "scripts": {
     "build": "tsup",

@@ -1,5 +1,5 @@
 {
-  "extends": "@zer0/typescript-config/base",
+  "extends": "@maestro/typescript-config/base",
   "compilerOptions": {
     "target": "es2018",
     "module": "esnext",
